@@ -111,6 +111,10 @@ function generateFunctionalProgression() {
     const scale = buildScale(root, isMinor);
     const chords = buildTriads(scale, isMinor);
 
+    // Store globally for chord picker
+    currentScale = scale;
+    currentIsMinor = isMinor;
+
     const pick = group => chords[group[Math.floor(Math.random() * group.length)]];
 
     const chordCount = document.getElementById("countToggle").checked ? 8 : 4;
@@ -123,11 +127,12 @@ function generateFunctionalProgression() {
                       i % 4 === 2 ? FUNCTIONAL_GROUPS.dominant :
                                     FUNCTIONAL_GROUPS.tonic;
 
-        progression.push(pick(group));
+        // Clone chord so edits don't mutate base triads
+        progression.push({ ...pick(group) });
     }
 
     if (document.getElementById("modeToggle").checked) {
-        progression = progression.map(ch => addEDMExtensions(ch));
+        progression = progression.map(ch => addEDMExtensions({ ...ch }));
     }
 
     return {
@@ -135,6 +140,7 @@ function generateFunctionalProgression() {
         progression
     };
 }
+
 
 // ----------------------
 // Drag & Drop
@@ -177,14 +183,27 @@ function renderChords() {
 
         div.innerHTML = `<div class="chord-name">${ch.name} ${ch.quality}</div>`;
 
+        // Drag handlers
         div.addEventListener("dragstart", handleDragStart);
         div.addEventListener("dragover", handleDragOver);
         div.addEventListener("drop", handleDrop);
         div.addEventListener("dragend", () => div.classList.remove("dragging"));
 
+        // CLICK HANDLER — now correctly inside the loop
+        div.addEventListener("click", (e) => {
+            e.stopPropagation();
+
+            const picker = openChordPicker(index, currentScale, currentIsMinor);
+
+            const rect = div.getBoundingClientRect();
+            picker.style.left = rect.left + "px";
+            picker.style.top = rect.bottom + "px";
+        });
+
         chordContainer.appendChild(div);
     });
 }
+
 
 // ----------------------
 // Piano roll
@@ -382,3 +401,51 @@ document.getElementById("exportBtn").onclick = exportToMIDI;
 
 // Generate initial progression
 generateProgression();
+
+// ----------------------
+// Chord Picker
+// ----------------------
+
+function openChordPicker(index, scale, isMinor) {
+    // Remove any existing picker
+    const existing = document.getElementById("chordPicker");
+    if (existing) existing.remove();
+
+    const picker = document.createElement("div");
+    picker.id = "chordPicker";
+    picker.style.position = "absolute";
+    picker.style.background = "#0f172a";
+    picker.style.border = "1px solid #1f2937";
+    picker.style.borderRadius = "8px";
+    picker.style.padding = "8px";
+    picker.style.boxShadow = "0 0 12px rgba(0,116,201,0.4)";
+    picker.style.zIndex = 9999;
+
+    // Build triads for this key
+    const triads = buildTriads(scale, isMinor);
+
+    triads.forEach((ch, i) => {
+        const item = document.createElement("div");
+        item.textContent = `${ch.name} ${ch.quality}`;
+        item.style.padding = "6px 12px";
+        item.style.cursor = "pointer";
+        item.style.color = "#e5e7eb";
+
+        item.onmouseenter = () => item.style.background = "#1e293b";
+        item.onmouseleave = () => item.style.background = "transparent";
+
+        item.onclick = () => {
+            currentProgression[index] = ch;
+            picker.remove();
+            renderChords();
+            drawPianoRoll();
+        };
+
+        picker.appendChild(item);
+    });
+
+    document.body.appendChild(picker);
+
+    return picker;
+}
+
