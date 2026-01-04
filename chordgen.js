@@ -303,7 +303,7 @@ function drawPianoRoll() {
         }
 
         // Grid line
-        ctx.strokeStyle = "#0074C9";
+        ctx.strokeStyle = "#0a0f1c";
         ctx.beginPath();
         ctx.moveTo(0, y);
         ctx.lineTo(canvas.width, y);
