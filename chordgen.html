@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ChordGen</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Load CSS -->
+    <link rel="stylesheet" href="chordgen.css">
+
+    <!-- Tone.js + MIDI Writer -->
+    <script src="https://cdn.jsdelivr.net/npm/midi-writer-js/browser/midiwriter.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+</head>
+
+<body>
+
+<!-- Toolbar -->
+<div class="toolbar">
+
+    <div class="toolbar-left">
+        <img src="https://www.rewiredrecords.co.uk/cdn/shop/files/RR-Wide-Blue-2.png?v=1675293028"
+             alt="Rewired Records Logo"
+             class="rr-logo">
+        <span class="app-title">ChordGen</span>
+    </div>
+
+    <div class="toolbar-center">
+        <div class="toolbar-controls">
+
+            <!-- Simple / Advanced -->
+            <div class="mode-toggle">
+                <label class="toggle-label">Simple</label>
+                <label class="switch">
+                    <input type="checkbox" id="modeToggle">
+                    <span class="slider"></span>
+                </label>
+                <label class="toggle-label">Advanced</label>
+            </div>
+
+            <!-- 4 / 8 chords -->
+            <div class="count-toggle">
+                <label class="toggle-label">4 Chords</label>
+                <label class="switch">
+                    <input type="checkbox" id="countToggle">
+                    <span class="slider"></span>
+                </label>
+                <label class="toggle-label">8 Chords</label>
+            </div>
+
+            <button id="generateBtn">Generate</button>
+            <button id="previewBtn">Preview</button>
+            <button id="exportBtn">Export MIDI</button>
+        </div>
+    </div>
+
+    <div class="toolbar-right"></div>
+
+</div>
+
+<!-- Main -->
+<div class="container">
+
+    <div id="chordContainer" class="chords"></div>
+
+    <canvas id="pianoRoll"></canvas>
+
+    <div id="statusText" class="status">Loading...</div>
+</div>
+
+<!-- Load JS -->
+<script src="chordgen.js"></script>
+
+</body>
+</html>
