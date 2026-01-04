@@ -258,8 +258,6 @@ function renderChords() {
 // Piano roll
 // ----------------------
 
-const scaleSet = scaleMidiSet(currentScale);
-
 function noteToMidi(note) {
     const pitch = note.slice(0, -1);
     const octave = parseInt(note.slice(-1), 10);
