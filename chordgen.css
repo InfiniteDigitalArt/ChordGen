@@ -35,12 +35,24 @@ body {
     z-index: 10;
 }
 
-.toolbar-left,
-.toolbar-right {
+.toolbar-left {
     width: 200px;
     display: flex;
     align-items: center;
 }
+
+.toolbar-right {
+    width: 200px; /* or flex:1 if you want it to stretch */
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.toolbar-buttons {
+    display: flex;
+    gap: 12px;
+}
+
 
 .toolbar-center {
     flex: 1;
