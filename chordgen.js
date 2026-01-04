@@ -300,10 +300,13 @@ function drawPianoRoll() {
     
     const pitchClass = midi % 12;
     
+    const pitchClass = midi % 12;
+    
     if (scaleSet.has(pitchClass)) {
         ctx.fillStyle = "rgba(0, 116, 201, 0.12)";
         ctx.fillRect(0, y, canvas.width, noteHeight);
     }
+
 
     
         // Draw grid line
