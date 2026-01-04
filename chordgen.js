@@ -2,6 +2,18 @@
 // Music theory engine
 // ----------------------
 
+function scaleMidiSet(scale) {
+    const set = new Set();
+    scale.forEach(note => {
+        const idx = NOTES.indexOf(note);
+        for (let oct = 0; oct < 10; oct++) {
+            set.add(idx + (oct + 1) * 12);
+        }
+    });
+    return set;
+}
+
+
 const NOTES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 
 const MAJOR_SCALE = [2,2,1,2,2,2,1];
@@ -249,6 +261,8 @@ function renderChords() {
 // Piano roll
 // ----------------------
 
+const scaleSet = scaleMidiSet(currentScale);
+
 function noteToMidi(note) {
     const pitch = note.slice(0, -1);
     const octave = parseInt(note.slice(-1), 10);
@@ -281,12 +295,23 @@ function drawPianoRoll() {
     ctx.lineWidth = 1;
 
     for (let i = 0; i <= range; i++) {
-        const y = canvas.height - i * noteHeight;
+        const midi = minMidi + i;
+        const y = canvas.height - (i + 1) * noteHeight;
+    
+        // Highlight if note is in scale
+        if (scaleSet.has(midi % 12 + 12)) {
+            ctx.fillStyle = "rgba(0, 116, 201, 0.12)"; // subtle blue glow
+            ctx.fillRect(0, y, canvas.width, noteHeight);
+        }
+    
+        // Draw grid line
+        ctx.strokeStyle = "#1f2937";
         ctx.beginPath();
         ctx.moveTo(0, y);
         ctx.lineTo(canvas.width, y);
         ctx.stroke();
     }
+
 
     currentProgression.forEach((chord, i) => {
         chord.notes.forEach(note => {
