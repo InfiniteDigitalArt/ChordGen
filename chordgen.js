@@ -2,6 +2,8 @@
 // Music theory engine
 // ----------------------
 
+const NOTES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+
 function scaleMidiSet(scale) {
     const set = new Set();
     scale.forEach(note => {
@@ -10,10 +12,6 @@ function scaleMidiSet(scale) {
     });
     return set;
 }
-
-
-
-const NOTES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 
 const MAJOR_SCALE = [2,2,1,2,2,2,1];
 const MINOR_SCALE = [2,1,2,2,1,2,2];
