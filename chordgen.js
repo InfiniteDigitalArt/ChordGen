@@ -87,14 +87,14 @@ function addEDMExtensions(chord) {
 
     const sus2 = sus2Pitch + rootOct;
     const sus4 = sus4Pitch + rootOct;
-    const add9 = sus2Pitch + (parseInt(rootOct) + 1);
 
-    if (r < 0.33) chord.notes[2] = sus2;
-    else if (r < 0.66) chord.notes[2] = sus4;
-    else chord.notes.push(add9);
+    // 50% sus2, 50% sus4 — no add9
+    if (r < 0.5) chord.notes[2] = sus2;
+    else chord.notes[2] = sus4;
 
     return chord;
 }
+
 
 // ----------------------
 // Functional harmony
