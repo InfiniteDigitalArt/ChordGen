@@ -17,152 +17,85 @@ body {
 }
 
 /* --------------------------------------------------
-   Professional Plugin Toolbar (Improved)
+   Toolbar
 -------------------------------------------------- */
 
 .toolbar {
     width: 100vw;
+    height: 70px;
     background: #0f172a;
     border-bottom: 1px solid #1f2937;
+    display: flex;
+    align-items: center;
+    justify-content: center; /* center the whole group */
     position: fixed;
     top: 0;
     left: 0;
     z-index: 10;
+}
 
-    /* More premium spacing */
-    padding: 22px 0 26px;
 
-    /* Softer, more realistic plugin shadow */
-    box-shadow: 0 6px 28px rgba(0, 0, 0, 0.45);
+.toolbar-left,
+.toolbar-right {
+    flex: 1; /* equal space on both sides */
+    display: flex;
+    align-items: center;
+}
 
+.toolbar-center {
     display: flex;
     justify-content: center;
 }
 
-.toolbar-inner {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-
-    /* More intentional spacing between header + controls */
-    gap: 18px;
-}
-
-/* --------------------------------------------------
-   Branding Row
--------------------------------------------------- */
-
-.toolbar-top {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px; /* tighter, more premium */
-}
 
 .rr-logo {
-    height: 48px; /* slightly larger for presence */
+    height: 40px;
+    object-fit: contain;
     filter: drop-shadow(0 0 6px #00aaff);
+    margin-right: 10px;
 }
 
 .app-title {
-    font-size: 22px;
+    font-size: 18px;
     font-weight: 700;
     color: #00aaff;
-    letter-spacing: 1.4px;
-    text-shadow: 0 0 8px #00aaff;
+    text-shadow: 0 0 6px #00aaff;
+    letter-spacing: 1px;
 }
 
-/* --------------------------------------------------
-   Controls Row
--------------------------------------------------- */
-
-.toolbar-bottom {
+.toolbar-controls {
     display: flex;
     align-items: center;
-    justify-content: center;
-
-    /* More breathing room between groups */
-    gap: 32px;
-
-    flex-wrap: wrap;
-    max-width: 900px; /* prevents stretching on large screens */
+    gap: 16px;
 }
 
-.control-group {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-/* --------------------------------------------------
-   Buttons (Professional Plugin Style)
--------------------------------------------------- */
-
-.button-group {
-    display: flex;
-    gap: 14px;
-}
-
-.button-group button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-
-    padding: 10px 22px;
-    border-radius: 6px;
-    border: 1px solid #1f2937;
+.toolbar-controls button {
+    padding: 10px 18px;
+    border-radius: 8px;
+    border: none;
     cursor: pointer;
-
     font-weight: 600;
-    background: linear-gradient(180deg, #1b2433 0%, #111827 100%);
-    color: #dbeafe;
+    background: #1e293b;
+    color: #e5e7eb;
     font-size: 14px;
-
-    box-shadow: inset 0 0 4px rgba(0,0,0,0.4);
-    transition: 
-        background 0.2s ease,
-        box-shadow 0.2s ease,
-        transform 0.15s ease;
+    transition: box-shadow 0.2s ease;
 }
 
-.button-group button:hover {
-    background: linear-gradient(180deg, #243044 0%, #1a2333 100%);
-    box-shadow: 0 0 10px rgba(0, 116, 201, 0.4);
-    transform: translateY(-1px);
+.toolbar-controls button:hover {
+    box-shadow: 0 0 8px #0074C9;
 }
 
-/* Export button (accent) */
+/* Export button in neon blue */
+
 #exportBtn {
-    background: linear-gradient(180deg, #0074C9 0%, #005fa3 100%) !important;
-    border-color: #0074C9;
+    background: #0074C9 !important;
     color: #ffffff;
-    box-shadow: 0 0 10px rgba(0, 116, 201, 0.5);
+    box-shadow: 0 0 10px #0074C9;
 }
 
 #exportBtn:hover {
-    background: linear-gradient(180deg, #0094ff 0%, #0074C9 100%) !important;
-    box-shadow: 0 0 16px rgba(0, 170, 255, 0.7);
+    box-shadow: 0 0 14px #00aaff;
 }
-
-/* --------------------------------------------------
-   Button Icons
--------------------------------------------------- */
-
-.btn-icon {
-    width: 16px;
-    height: 16px;
-    fill: #9ccfff; /* softer, more premium */
-    opacity: 0.9;
-    transition: fill 0.2s ease, opacity 0.2s ease;
-}
-
-button:hover .btn-icon {
-    fill: #ffffff;
-    opacity: 1;
-}
-
-
 
 /* --------------------------------------------------
    Toggles
@@ -309,36 +242,3 @@ input:checked + .slider:before {
 -------------------------------------------------- */
 
 @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap');
-
-/* --------------------------------------------------
-   Mobile
--------------------------------------------------- */
-
-@media (max-width: 700px) {
-
-    .toolbar-inner {
-        gap: 18px;
-    }
-
-    .toolbar-bottom {
-        flex-direction: column;
-        gap: 16px;
-    }
-
-    .button-group {
-        flex-direction: column;
-        width: 100%;
-        max-width: 260px;
-    }
-
-    .button-group button {
-        width: 100%;
-    }
-
-    .container {
-        margin-top: 260px; /* matches new toolbar height */
-    }
-}
-
-
-
