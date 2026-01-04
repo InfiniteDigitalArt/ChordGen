@@ -257,4 +257,11 @@ input:checked + .slider:before {
    Mobile
 -------------------------------------------------- */
 
+@media (max-width: 700px) {
+    .container {
+        margin-top: 220px; /* enough space for stacked toolbar */
+    }
+}
+
+
 
