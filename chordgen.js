@@ -460,16 +460,21 @@ function openChordPicker(index, scale, isMinor) {
     picker.style.padding = "8px";
     picker.style.boxShadow = "0 0 12px rgba(0,116,201,0.4)";
     picker.style.zIndex = 9999;
+    picker.style.minWidth = "140px";
 
-    // Build triads for this key
+    // Build all chord options
     const triads = buildTriads(scale, isMinor);
+    const susChords = buildSusChords(scale, isMinor);
 
-    triads.forEach((ch, i) => {
+    const allChords = [...triads, ...susChords];
+
+    allChords.forEach((ch) => {
         const item = document.createElement("div");
         item.textContent = `${ch.name} ${ch.quality}`;
         item.style.padding = "6px 12px";
         item.style.cursor = "pointer";
         item.style.color = "#e5e7eb";
+        item.style.whiteSpace = "nowrap";
 
         item.onmouseenter = () => item.style.background = "#1e293b";
         item.onmouseleave = () => item.style.background = "transparent";
@@ -485,7 +490,7 @@ function openChordPicker(index, scale, isMinor) {
     });
 
     document.body.appendChild(picker);
-
     return picker;
 }
+
 
