@@ -35,6 +35,8 @@ body {
     z-index: 10;
 }
 
+.rr-logo { height: 40px; object-fit: contain; filter: drop-shadow(0 0 6px #00aaff); margin-right: 10px; }
+
 .toolbar-left {
     width: 200px;
     display: flex;
