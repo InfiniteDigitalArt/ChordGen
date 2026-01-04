@@ -466,7 +466,20 @@ function openChordPicker(index, scale, isMinor) {
     const triads = buildTriads(scale, isMinor);
     const susChords = buildSusChords(scale, isMinor);
 
-    const allChords = [...triads, ...susChords];
+    const allChords = [...triads, ...susChords].sort((a, b) => {
+    // Sort by root note first
+    const rootA = a.name;
+    const rootB = b.name;
+
+    const indexA = NOTES.indexOf(rootA);
+    const indexB = NOTES.indexOf(rootB);
+
+    if (indexA !== indexB) return indexA - indexB;
+
+    // If same root, sort by quality
+    return a.quality.localeCompare(b.quality);
+    });
+
 
     allChords.forEach((ch) => {
         const item = document.createElement("div");
@@ -492,5 +505,11 @@ function openChordPicker(index, scale, isMinor) {
     document.body.appendChild(picker);
     return picker;
 }
+
+document.addEventListener("click", () => {
+    const picker = document.getElementById("chordPicker");
+    if (picker) picker.remove();
+});
+
 
 
