@@ -280,9 +280,10 @@ function drawPianoRoll() {
 
     if (!currentProgression.length) return;
 
-    const scaleSet = scaleMidiSet(currentScale);
+    // Build pitch-class set for scale highlighting
+    const scaleSet = new Set(currentScale.map(n => NOTES.indexOf(n)));
 
-
+    // Collect MIDI notes
     const midiNotes = currentProgression.flatMap(ch => ch.notes.map(noteToMidi));
     const minMidi = Math.min(...midiNotes);
     const maxMidi = Math.max(...midiNotes);
@@ -291,25 +292,19 @@ function drawPianoRoll() {
     const noteHeight = canvas.height / range;
     const chordWidth = canvas.width / currentProgression.length;
 
-    ctx.strokeStyle = "#1f2937";
-    ctx.lineWidth = 1;
-
-    for (let i = 0; i <= range; i++) {
+    // Draw background rows + scale highlighting
+    for (let i = 0; i < range; i++) {
         const midi = minMidi + i;
+        const pitchClass = midi % 12;
         const y = canvas.height - (i + 1) * noteHeight;
-    
-    const pitchClass = midi % 12;
-    
-    const pitchClass = midi % 12;
-    
-    if (scaleSet.has(pitchClass)) {
-        ctx.fillStyle = "rgba(0, 116, 201, 0.12)";
-        ctx.fillRect(0, y, canvas.width, noteHeight);
-    }
 
+        // Highlight scale notes
+        if (scaleSet.has(pitchClass)) {
+            ctx.fillStyle = "rgba(0, 116, 201, 0.12)";
+            ctx.fillRect(0, y, canvas.width, noteHeight);
+        }
 
-    
-        // Draw grid line
+        // Grid line
         ctx.strokeStyle = "#1f2937";
         ctx.beginPath();
         ctx.moveTo(0, y);
@@ -317,7 +312,7 @@ function drawPianoRoll() {
         ctx.stroke();
     }
 
-
+    // Draw chord blocks
     currentProgression.forEach((chord, i) => {
         chord.notes.forEach(note => {
             const midi = noteToMidi(note);
@@ -329,6 +324,7 @@ function drawPianoRoll() {
         });
     });
 
+    // Draw playhead cursor
     if (isPlaying) {
         ctx.strokeStyle = "#f87171";
         ctx.lineWidth = 2;
@@ -338,6 +334,7 @@ function drawPianoRoll() {
         ctx.stroke();
     }
 }
+
 
 // ----------------------
 // Tone.js playback
