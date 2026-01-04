@@ -95,6 +95,46 @@ function addEDMExtensions(chord) {
     return chord;
 }
 
+function buildSusChords(scale, isMinor=false) {
+    const chords = [];
+
+    for (let i = 0; i < 7; i++) {
+        const root = scale[i];
+        const second = scale[(i + 1) % 7];
+        const fourth = scale[(i + 3) % 7];
+        const fifth = scale[(i + 4) % 7];
+
+        const bass = root + "3";
+
+        const sus2 = {
+            name: root,
+            quality: "sus2",
+            notes: [
+                bass,
+                root + "4",
+                second + "4",
+                fifth + "4"
+            ]
+        };
+
+        const sus4 = {
+            name: root,
+            quality: "sus4",
+            notes: [
+                bass,
+                root + "4",
+                fourth + "4",
+                fifth + "4"
+            ]
+        };
+
+        chords.push(sus2, sus4);
+    }
+
+    return chords;
+}
+
+
 
 // ----------------------
 // Functional harmony
