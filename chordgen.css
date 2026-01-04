@@ -22,7 +22,7 @@ body {
 
 .toolbar {
     width: 100vw;
-    height: 70px;
+    min-height: 70px; /* keeps desktop look but allows expansion */
     background: #0f172a;
     border-bottom: 1px solid #1f2937;
     display: flex;
@@ -44,8 +44,11 @@ body {
 
 .toolbar-center {
     display: flex;
+    flex-direction: column; /* stack header above controls */
+    align-items: center;    /* center horizontally */
     justify-content: center;
 }
+
 
 
 .rr-logo {
