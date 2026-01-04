@@ -283,6 +283,9 @@ function drawPianoRoll() {
 
     if (!currentProgression.length) return;
 
+    const scaleSet = scaleMidiSet(currentScale);
+
+
     const midiNotes = currentProgression.flatMap(ch => ch.notes.map(noteToMidi));
     const minMidi = Math.min(...midiNotes);
     const maxMidi = Math.max(...midiNotes);
