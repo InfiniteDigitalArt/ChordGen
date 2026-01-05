@@ -379,6 +379,15 @@ async function previewAudio() {
 
     await Tone.start();
 
+    // 🔥 Stop any previous playback
+    Tone.Transport.stop();
+    Tone.Transport.cancel();
+
+    // 🔥 Release any hanging notes (safety)
+    if (piano.releaseAll) {
+        piano.releaseAll();
+    }
+
     const canvas = document.getElementById("pianoRoll");
 
     const totalChords = currentProgression.length;
@@ -390,6 +399,7 @@ async function previewAudio() {
     const startTime = Tone.now();
     const animStart = performance.now();
 
+    // Schedule fresh notes
     currentProgression.forEach((chord, i) => {
         const timeOffset = i * chordDuration;
         chord.notes.forEach(n => {
@@ -413,8 +423,12 @@ async function previewAudio() {
         }
     }
 
+    // Start the transport AFTER scheduling
+    Tone.Transport.start();
+
     requestAnimationFrame(animateCursor);
 }
+
 
 // ----------------------
 // MIDI export
