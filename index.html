@@ -18,20 +18,22 @@
 <!-- Toolbar -->
 <div class="toolbar">
 
-    <div class="toolbar-inner">
+    <!-- Left spacer (balances layout) -->
+    <div class="toolbar-left"></div>
 
-        <!-- Top row: Branding -->
-        <div class="toolbar-top">
+    <!-- Centered toolbar content -->
+    <div class="toolbar-center">
+        <div class="toolbar-controls">
+
+            <!-- Logo + Title -->
             <img src="https://www.rewiredrecords.co.uk/cdn/shop/files/RR-Wide-Blue-2.png?v=1675293028"
                  alt="Rewired Records Logo"
                  class="rr-logo">
+
             <span class="app-title">ChordGen</span>
-        </div>
 
-        <!-- Bottom row: Controls -->
-        <div class="toolbar-bottom">
-
-            <div class="control-group">
+            <!-- Simple / Advanced -->
+            <div class="mode-toggle">
                 <label class="toggle-label">Simple</label>
                 <label class="switch">
                     <input type="checkbox" id="modeToggle">
@@ -40,7 +42,8 @@
                 <label class="toggle-label">Advanced</label>
             </div>
 
-            <div class="control-group">
+            <!-- 4 / 8 chords -->
+            <div class="count-toggle">
                 <label class="toggle-label">4 Chords</label>
                 <label class="switch">
                     <input type="checkbox" id="countToggle">
@@ -49,37 +52,18 @@
                 <label class="toggle-label">8 Chords</label>
             </div>
 
-<div class="button-group">
-    <button id="generateBtn">
-        <svg class="btn-icon" viewBox="0 0 24 24">
-            <path d="M12 2L15 8L22 9L17 14L18 21L12 18L6 21L7 14L2 9L9 8Z" />
-        </svg>
-        Generate
-    </button>
-
-    <button id="previewBtn">
-        <svg class="btn-icon" viewBox="0 0 24 24">
-            <path d="M8 5v14l11-7z" />
-        </svg>
-        Preview
-    </button>
-
-    <button id="exportBtn">
-        <svg class="btn-icon" viewBox="0 0 24 24">
-            <path d="M4 4h16v16H4z M8 4v4h8V4" />
-        </svg>
-        Export MIDI
-    </button>
-</div>
-
+            <!-- Buttons -->
+            <button id="generateBtn">Generate</button>
+            <button id="previewBtn">Preview</button>
+            <button id="exportBtn">Export MIDI</button>
 
         </div>
-
     </div>
 
+    <!-- Right spacer (balances layout) -->
+    <div class="toolbar-right"></div>
+
 </div>
-
-
 
 <!-- Main -->
 <div class="container">
