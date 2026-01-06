@@ -51,7 +51,7 @@ function buildTriads(scale, isMinor=false) {
         const third = scale[(i+2)%7];
         const fifth = scale[(i+4)%7];
 
-        const bass = root + "3";
+        const bass = root + "2";
 
         const triad = [
             bass,
@@ -78,31 +78,33 @@ function randomKey() {
     return { root, isMinor };
 }
 
-// ----------------------
-// Extensions (Advanced mode)
-// ----------------------
-
 function addEDMExtensions(chord) {
-    const r = Math.random();
-
     const rootNote = chord.notes[1];
     const rootPitch = rootNote.slice(0, -1);
     const rootOct = rootNote.slice(-1);
 
-    const rootIndex = NOTES.indexOf(rootPitch);
+    const scaleIndex = currentScale.indexOf(rootPitch);
 
-    const sus2Pitch = NOTES[(rootIndex + 2) % 12];
-    const sus4Pitch = NOTES[(rootIndex + 5) % 12];
+    const sus2Pitch = currentScale[(scaleIndex + 1) % 7];
+    const sus4Pitch = currentScale[(scaleIndex + 3) % 7];
 
     const sus2 = sus2Pitch + rootOct;
     const sus4 = sus4Pitch + rootOct;
 
-    // 50% sus2, 50% sus4 — no add9
-    if (r < 0.5) chord.notes[2] = sus2;
-    else chord.notes[2] = sus4;
+    if (Math.random() < 0.5) {
+        chord.notes[2] = sus2;
+        chord.quality = "sus2";
+    } else {
+        chord.notes[2] = sus4;
+        chord.quality = "sus4";
+    }
 
     return chord;
 }
+
+
+
+
 
 function buildSusChords(scale, isMinor=false) {
     const chords = [];
@@ -152,7 +154,7 @@ function buildSusChords(scale, isMinor=false) {
 const FUNCTIONAL_GROUPS = {
     tonic:    [0, 5],
     pre:      [1, 3],
-    dominant: [4, 6]
+    dominant: [4]
 };
 
 function generateFunctionalProgression() {
@@ -164,7 +166,25 @@ function generateFunctionalProgression() {
     currentScale = scale;
     currentIsMinor = isMinor;
 
-    const pick = group => chords[group[Math.floor(Math.random() * group.length)]];
+    function pick(group) {
+        // Map indices to chord objects
+        let candidates = group.map(i => chords[i]);
+
+        // Remove diminished chords entirely
+        candidates = candidates.filter(ch => ch.quality !== "dim");
+
+        // Safety: if filtering removed everything, fall back to the first chord in the group
+        if (candidates.length === 0) {
+            return chords[group[0]];
+        }
+
+        // Pick randomly from remaining chords
+        return candidates[Math.floor(Math.random() * candidates.length)];
+    }
+
+
+
+
 
     const chordCount = document.getElementById("countToggle").checked ? 8 : 4;
 
@@ -176,19 +196,30 @@ function generateFunctionalProgression() {
                       i % 4 === 2 ? FUNCTIONAL_GROUPS.dominant :
                                     FUNCTIONAL_GROUPS.tonic;
 
-        // Clone chord so edits don't mutate base triads
         progression.push({ ...pick(group) });
     }
 
     if (document.getElementById("modeToggle").checked) {
-        progression = progression.map(ch => addEDMExtensions({ ...ch }));
+        progression = progression.map(ch => {
+            if (Math.random() < 0.4) {
+                return addEDMExtensions({ ...ch });
+            }
+            return ch;
+        });
     }
+
+    // ⭐ THIS WAS MISSING
+    currentProgression = progression;
+
+    // Update UI
+    updateProgressionDisplay();
 
     return {
         key: `${root} ${isMinor ? "minor" : "major"}`,
         progression
     };
 }
+
 
 
 // ----------------------
@@ -198,8 +229,9 @@ function generateFunctionalProgression() {
 let draggedIndex = null;
 
 function handleDragStart(e) {
-    draggedIndex = Number(e.target.dataset.index);
-    e.target.classList.add("dragging");
+    const card = e.target.closest(".chord-card");
+    draggedIndex = Number(card.dataset.index);
+    card.classList.add("dragging");
 }
 
 function handleDragOver(e) {
@@ -214,12 +246,19 @@ function handleDrop(e) {
 
     const targetIndex = Number(target.dataset.index);
 
-    const moved = currentProgression.splice(draggedIndex, 1)[0];
+    // Remove the dragged chord
+    const [moved] = currentProgression.splice(draggedIndex, 1);
+
+    // Insert it at the new index
     currentProgression.splice(targetIndex, 0, moved);
 
+    // Update UI
     renderChords();
     drawPianoRoll();
+    updateProgressionDisplay(); // <-- correct place
 }
+
+
 
 function renderChords() {
     chordContainer.innerHTML = "";
@@ -264,12 +303,28 @@ function noteToMidi(note) {
     return NOTES.indexOf(pitch) + (octave + 1) * 12;
 }
 
-let cursorX = 0;
-let isPlaying = false;
+// ----------------------
+// Piano roll (FINAL)
+// ----------------------
 
 function drawPianoRoll() {
-    const canvas = document.getElementById("pianoRoll");
-    const ctx = canvas.getContext("2d");
+
+    if (!currentScale || !Array.isArray(currentScale) || currentScale.length === 0) {
+    console.warn("drawPianoRoll skipped: currentScale is invalid", currentScale);
+    return;
+}
+    
+const canvas = document.getElementById("pianoRoll");
+if (!canvas) {
+    console.error("drawPianoRoll ERROR: canvas not found");
+    return;
+}
+
+const ctx = canvas.getContext("2d");
+if (!ctx) {
+    console.error("drawPianoRoll ERROR: 2D context not available", canvas);
+    return;
+}
 
     canvas.width = canvas.clientWidth;
     canvas.height = canvas.clientHeight;
@@ -278,31 +333,38 @@ function drawPianoRoll() {
 
     if (!currentProgression.length) return;
 
-    // Build pitch-class set for scale highlighting
+    const patternName = document.getElementById("rhythmSelector").value;
+    const rhythm = RHYTHM_SETS[patternName] || RHYTHM_SETS["none"];
+
     const scaleSet = new Set(currentScale.map(n => NOTES.indexOf(n)));
 
-    // Collect MIDI notes
     const midiNotes = currentProgression.flatMap(ch => ch.notes.map(noteToMidi));
     const minMidi = Math.min(...midiNotes);
     const maxMidi = Math.max(...midiNotes);
     const range = maxMidi - minMidi + 1;
 
     const noteHeight = canvas.height / range;
-    const chordWidth = canvas.width / currentProgression.length;
+    const REST_UNIT = 1;
 
-    // Draw background rows + scale highlighting
+    const totalUnits = currentProgression.reduce((sum, chord) => {
+        return sum + rhythm.chords.reduce((inner, step) => {
+            return inner + (step === 0 ? REST_UNIT : step);
+        }, 0);
+    }, 0);
+
+    const unitWidth = canvas.width / totalUnits;
+
+    // Background rows
     for (let i = 0; i < range; i++) {
         const midi = minMidi + i;
         const pitchClass = midi % 12;
         const y = canvas.height - (i + 1) * noteHeight;
 
-        // Highlight scale notes
         if (scaleSet.has(pitchClass)) {
             ctx.fillStyle = "rgba(0, 116, 201, 0.12)";
             ctx.fillRect(0, y, canvas.width, noteHeight);
         }
 
-        // Grid line
         ctx.strokeStyle = "#0a0f1c";
         ctx.beginPath();
         ctx.moveTo(0, y);
@@ -310,19 +372,62 @@ function drawPianoRoll() {
         ctx.stroke();
     }
 
-    // Draw chord blocks
-    currentProgression.forEach((chord, i) => {
-        chord.notes.forEach(note => {
-            const midi = noteToMidi(note);
-            const y = canvas.height - ((midi - minMidi + 1) * noteHeight);
-            const x = i * chordWidth;
+    // CHORDS (no bass)
+    let cursor = 0;
 
-            ctx.fillStyle = "#0074C9";
-            ctx.fillRect(x + 4, y + 2, chordWidth - 8, noteHeight - 4);
+    currentProgression.forEach(chord => {
+        const chordNotes = chord.notes.slice(1);
+
+        rhythm.chords.forEach(step => {
+            const units = step === 0 ? REST_UNIT : step;
+            const width = unitWidth * units;
+
+            if (step > 0) {
+                chordNotes.forEach(note => {
+if (!note || typeof note !== "string" || !/\d$/.test(note)) {
+    console.error("Invalid chord note:", note, chord);
+}
+
+
+                    const midi = noteToMidi(note);
+                    const y = canvas.height - ((midi - minMidi + 1) * noteHeight);
+
+                    ctx.fillStyle = "#0074C9";
+                    ctx.fillRect(cursor + 2, y + 2, width - 4, noteHeight - 4);
+                });
+            }
+
+            cursor += width;
         });
     });
 
-    // Draw playhead cursor
+    // BASS
+    cursor = 0;
+
+    currentProgression.forEach(chord => {
+        const root = chord.notes[0];
+
+        rhythm.bass.forEach(step => {
+            const units = step === 0 ? REST_UNIT : step;
+            const width = unitWidth * units;
+
+            if (step > 0) {
+if (!root || typeof root !== "string" || !/\d$/.test(root)) {
+    console.error("Invalid bass note:", root, chord);
+}
+
+                const midi = noteToMidi(root);
+                const y = canvas.height - ((midi - minMidi + 1) * noteHeight);
+
+                ctx.fillStyle = "#00C97A";
+                ctx.fillRect(cursor + 2, y + 2, width - 4, noteHeight - 4);
+            }
+
+            cursor += width;
+        });
+    });
+
+    // Playhead
     if (isPlaying) {
         ctx.strokeStyle = "#f87171";
         ctx.lineWidth = 2;
@@ -332,6 +437,10 @@ function drawPianoRoll() {
         ctx.stroke();
     }
 }
+
+
+
+
 
 
 // ----------------------
@@ -374,48 +483,85 @@ const piano = new Tone.Sampler({
     baseUrl: "https://tonejs.github.io/audio/salamander/"
 }).toDestination();
 
+piano.volume.value = 0;
+
+// ----------------------
+// Preview Audio (FINAL)
+// ----------------------
+
 async function previewAudio() {
     if (!currentProgression.length) return;
 
     await Tone.start();
 
-    // 🔥 Stop any previous playback
     Tone.Transport.stop();
     Tone.Transport.cancel();
+    Tone.Transport.position = 0;
 
-    // 🔥 Release any hanging notes (safety)
-    if (piano.releaseAll) {
-        piano.releaseAll();
-    }
+    piano.releaseAll();
 
     const canvas = document.getElementById("pianoRoll");
 
-    const totalChords = currentProgression.length;
-    const chordDuration = 1;
+    const patternName = document.getElementById("rhythmSelector").value;
+    const rhythm = RHYTHM_SETS[patternName] || RHYTHM_SETS["none"];
 
     cursorX = 0;
     isPlaying = true;
 
-    const startTime = Tone.now();
-    const animStart = performance.now();
+    let tickTime = 0; // <-- master tick counter
 
-    // Schedule fresh notes
-    currentProgression.forEach((chord, i) => {
-        const timeOffset = i * chordDuration;
-        chord.notes.forEach(n => {
-            piano.triggerAttackRelease(n, "1n", startTime + timeOffset);
+    // -------------------------
+    // CHORDS (no bass)
+    // -------------------------
+    currentProgression.forEach(chord => {
+        const chordNotes = chord.notes.slice(1);
+
+        rhythm.chords.forEach(step => {
+            if (step > 0 && chordNotes.length) {
+                Tone.Transport.schedule(time => {
+                    chordNotes.forEach(n => {
+                        piano.triggerAttackRelease(n, "T" + step, time);
+                    });
+                }, "T" + tickTime);
+            }
+
+            tickTime += step; // <-- accumulate ticks
         });
     });
 
-    const totalDuration = totalChords * chordDuration;
+    // -------------------------
+    // BASS (root only)
+    // -------------------------
+    let bassTick = 0; // <-- separate counter for bass scheduling
 
-    function animateCursor(now) {
-        const elapsed = (now - animStart) / 1000;
-        cursorX = (elapsed / totalDuration) * canvas.width;
+    currentProgression.forEach(chord => {
+        const root = chord.notes[0];
+
+        rhythm.bass.forEach(step => {
+            if (step > 0) {
+                Tone.Transport.schedule(time => {
+                    piano.triggerAttackRelease(root, "T" + step, time);
+                }, "T" + bassTick);
+            }
+
+            bassTick += step;
+        });
+    });
+
+    // -------------------------
+    // TOTAL LENGTH = chord timeline
+    // -------------------------
+    const totalTicks = tickTime;  // <-- correct
+
+    function animateCursor() {
+        if (!isPlaying) return;
+
+        const elapsedTicks = Tone.Transport.ticks;
+        cursorX = (elapsedTicks / totalTicks) * canvas.width;
 
         drawPianoRoll();
 
-        if (elapsed < totalDuration) {
+        if (elapsedTicks < totalTicks) {
             requestAnimationFrame(animateCursor);
         } else {
             isPlaying = false;
@@ -423,36 +569,111 @@ async function previewAudio() {
         }
     }
 
-    // Start the transport AFTER scheduling
-    Tone.Transport.start();
-
+    Tone.Transport.start("+0.05");
     requestAnimationFrame(animateCursor);
+
+    // expose for loop button
+    window.totalTicks = totalTicks;
 }
 
 
+
+
 // ----------------------
-// MIDI export
+// MIDI export (FINAL)
 // ----------------------
+
+function unitsToMidiDuration(units) {
+    switch (units) {
+        case 1: return "16"; // sixteenth
+        case 2: return "8";  // eighth
+        case 4: return "4";  // quarter
+        case 8: return "2";  // half
+        case 16: return "1"; // whole
+        default:
+            return "16"; // fallback
+    }
+}
 
 function exportToMIDI() {
     if (!currentProgression.length) return;
 
-    const track = new MidiWriter.Track();
-    track.setTempo(120);
+    const patternName = document.getElementById("rhythmSelector").value;
+    const rhythm = RHYTHM_SETS[patternName] || RHYTHM_SETS["none"];
 
+    const chordTrack = new MidiWriter.Track();
+    const bassTrack  = new MidiWriter.Track();
+
+    chordTrack.setTempo(120);
+    bassTrack.setTempo(120);
+
+    const REST_UNIT = 1;
+
+    // CHORD TRACK (no bass note)
     currentProgression.forEach(chord => {
-        track.addEvent(new MidiWriter.NoteEvent({
-            pitch: chord.notes,
-            duration: "1"
-        }));
+        const chordNotes = chord.notes.slice(1);
+
+        rhythm.chords.forEach(step => {
+            const units = step === 0 ? REST_UNIT : step;
+            const dur = unitsToMidiDuration(units);
+
+            if (step === 0) {
+                // Rest
+                chordTrack.addEvent(new MidiWriter.NoteEvent({
+                    rest: true,
+                    duration: dur
+                }));
+            } else {
+                // Notes
+                chordTrack.addEvent(new MidiWriter.NoteEvent({
+                    pitch: chordNotes,
+                    duration: dur
+                }));
+            }
+        });
     });
 
-    const writer = new MidiWriter.Writer(track);
+    // BASS TRACK (root only)
+    currentProgression.forEach(chord => {
+        const root = chord.notes[0];
+
+        rhythm.bass.forEach(step => {
+            const units = step === 0 ? REST_UNIT : step;
+            const dur = unitsToMidiDuration(units);
+
+            if (step === 0) {
+                bassTrack.addEvent(new MidiWriter.NoteEvent({
+                    rest: true,
+                    duration: dur
+                }));
+            } else {
+                bassTrack.addEvent(new MidiWriter.NoteEvent({
+                    pitch: [root],
+                    duration: dur
+                }));
+            }
+        });
+    });
+
+    // Filename: Key + Roman numerals
+    const progressionSymbols = currentProgression
+        .map(ch => romanNumeralForChord(currentScale, currentIsMinor, ch.name, ch.quality))
+        .join(" ");
+
+    const keyName = `${currentScale[0]} ${currentIsMinor ? "minor" : "major"}`;
+    const fileName = `${keyName} - ${progressionSymbols}.mid`
+        .replace(/\s+/g, "_")
+        .replace(/[^\w\-_.]/g, "");
+
+    const writer = new MidiWriter.Writer([chordTrack, bassTrack]);
+
     const a = document.createElement("a");
     a.href = writer.dataUri();
-    a.download = "progression.mid";
+    a.download = fileName;
     a.click();
 }
+
+
 
 // ----------------------
 // UI wiring
@@ -475,7 +696,6 @@ function generateProgression() {
 }
 
 document.getElementById("generateBtn").onclick = generateProgression;
-document.getElementById("previewBtn").onclick = previewAudio;
 document.getElementById("exportBtn").onclick = exportToMIDI;
 
 // Generate initial progression
@@ -536,12 +756,15 @@ function openChordPicker(index, scale, isMinor) {
             picker.remove();
             renderChords();
             drawPianoRoll();
+            updateProgressionDisplay(); // <-- correct place
         };
+
 
         picker.appendChild(item);
     });
 
     document.body.appendChild(picker);
+
     return picker;
 }
 
@@ -550,5 +773,79 @@ document.addEventListener("click", () => {
     if (picker) picker.remove();
 });
 
+document.getElementById("tempoSlider").addEventListener("input", e => {
+    const bpm = parseInt(e.target.value, 10);
+    Tone.Transport.bpm.value = bpm;
+    document.getElementById("tempoValue").textContent = bpm + " BPM";
+});
+
+document.getElementById("playBtn").onclick = async () => {
+    console.log("PLAY CLICKED");
+
+    await Tone.start(); // required for audio
+    console.log("Tone started");
+
+    previewAudio(); // schedules notes + starts transport
+};
 
 
+const stopBtn = document.getElementById("stopBtn");
+
+stopBtn.onclick = () => {
+    Tone.Transport.stop();
+    Tone.Transport.cancel();
+    piano.releaseAll();
+    isPlaying = false;
+    drawPianoRoll();
+};
+
+const loopBtn = document.getElementById("loopBtn");
+let isLooping = false;
+
+loopBtn.onclick = () => {
+    isLooping = !isLooping;
+
+    loopBtn.classList.toggle("active", isLooping);
+
+    if (isLooping) {
+        Tone.Transport.loop = true;
+        Tone.Transport.loopStart = "T0";
+        Tone.Transport.loopEnd = "T" + totalTicks; // <-- correct
+    } else {
+        Tone.Transport.loop = false;
+    }
+};
+
+
+function romanNumeralForChord(scale, isMinor, chordName, quality) {
+    const degree = scale.indexOf(chordName); // 0–6
+
+    if (degree === -1) return "?";
+
+    const MAJ = ["I","II","III","IV","V","VI","VII"];
+    const MIN = ["i","ii","iii","iv","v","vi","vii"];
+
+    let base = isMinor ? MIN[degree] : MAJ[degree];
+
+    // Adjust based on chord quality
+    if (quality === "min") base = base.toLowerCase();
+    if (quality === "dim") base = base.toLowerCase() + "°";
+    if (quality === "sus2") base += "sus2";
+    if (quality === "sus4") base += "sus4";
+
+    return base;
+}
+
+function updateProgressionDisplay() {
+    if (!currentProgression || !currentScale) return;
+
+    const progressionSymbols = currentProgression
+        .map(ch => romanNumeralForChord(currentScale, currentIsMinor, ch.name, ch.quality))
+        .join(" ");
+
+    document.getElementById("statusText").textContent =
+        `Key: ${currentScale[0]} ${currentIsMinor ? "minor" : "major"}`;
+
+    document.getElementById("progressionText").textContent =
+        `Prog: ${progressionSymbols}`;
+}
