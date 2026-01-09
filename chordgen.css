@@ -186,7 +186,7 @@ input:checked + .slider:before {
     margin-top: 90px;
     width: 92vw;
     max-width: 1400px;
-    height: 85vh;
+    height: 92vh;
     background: #0a0f1c;
     padding: 32px;
     border-radius: 20px;
