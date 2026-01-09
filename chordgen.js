@@ -1072,7 +1072,6 @@ dropZone.addEventListener("dragleave", e => {
     dropZone.classList.remove("dragover");
 });
 
-// Handle file drop
 dropZone.addEventListener("drop", async e => {
     e.preventDefault();
     e.stopPropagation();
@@ -1086,26 +1085,28 @@ dropZone.addEventListener("drop", async e => {
     try {
         const arrayBuffer = await file.arrayBuffer();
 
-        // Decode using Tone.js audio context
         const audioBuffer = await Tone.getContext().rawContext.decodeAudioData(arrayBuffer);
 
         droppedAudioBuffer = audioBuffer;
 
-        // Create a new player
+        // Draw waveform preview
+        drawWaveform(audioBuffer);
+
+
+        droppedAudioBuffer = audioBuffer;
+
         if (droppedAudioPlayer) {
+            droppedAudioPlayer.unsync();
             droppedAudioPlayer.stop();
             droppedAudioPlayer.dispose();
         }
 
         const toneBuffer = new Tone.ToneAudioBuffer(audioBuffer);
 
-        droppedAudioPlayer = new Tone.Player({
-            url: toneBuffer,
-            autostart: false
-        }).toDestination();
-
+        droppedAudioPlayer = new Tone.Player().toDestination();
+        droppedAudioPlayer.buffer = toneBuffer;
+        droppedAudioPlayer.autostart = false;
         droppedAudioPlayer.sync();
-
 
         dropZone.textContent = `Loaded: ${file.name}`;
     } catch (err) {
@@ -1113,6 +1114,43 @@ dropZone.addEventListener("drop", async e => {
         dropZone.textContent = "Error loading file";
     }
 });
+
+function drawWaveform(audioBuffer) {
+    const canvas = document.getElementById("waveformCanvas");
+    const ctx = canvas.getContext("2d");
+
+    // Resize canvas to match CSS size
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
+    canvas.width = width;
+    canvas.height = height;
+
+    ctx.clearRect(0, 0, width, height);
+
+    const data = audioBuffer.getChannelData(0); // mono preview
+    const step = Math.ceil(data.length / width);
+    const amp = height / 2;
+
+    ctx.strokeStyle = "#00aaff";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+
+    for (let i = 0; i < width; i++) {
+        let min = 1.0;
+        let max = -1.0;
+
+        for (let j = 0; j < step; j++) {
+            const v = data[i * step + j];
+            if (v < min) min = v;
+            if (v > max) max = v;
+        }
+
+        ctx.moveTo(i, (1 + min) * amp);
+        ctx.lineTo(i, (1 + max) * amp);
+    }
+
+    ctx.stroke();
+}
 
 
 
