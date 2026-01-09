@@ -647,10 +647,19 @@ async function previewAudio() {
 
 
     // For the loop button: use seconds, converted to Time
-    totalTicks = Tone.Time(totalDuration).toTicks(); // so your existing loop logic still works
-
+    totalTicks = Tone.Time(totalDuration).toTicks();
+    
+    // Update loop length so 8-chord mode works
+    Tone.Transport.loopEnd = totalDuration;
+    
+    // (Optional) If loop button is ON:
+    if (Tone.Transport.loop) {
+        Tone.Transport.loopEnd = totalDuration;
+    }
+    
     Tone.Transport.start("+0.05");
     requestAnimationFrame(animateCursor);
+
 }
 
 
