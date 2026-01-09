@@ -489,6 +489,16 @@ if (!root || typeof root !== "string" || !/\d$/.test(root)) {
 // Tone.js playback
 // ----------------------
 
+// Subtle reverb
+const reverb = new Tone.Reverb({
+    decay: 2.5,
+    wet: 0.15,
+    preDelay: 0.02
+}).toDestination();
+
+// ADSR gain stage
+const amp = new Tone.Gain(1).connect(reverb);
+
 const instruments = {
     piano: new Tone.Sampler({
         urls: {
@@ -508,11 +518,13 @@ const instruments = {
             "G2": "EscuderoM1Piano_G2.wav",
             "G4": "EscuderoM1Piano_G4.wav"
         },
-        baseUrl: "DancePiano/"
-    }).toDestination(),
+        baseUrl: "DancePiano/",
+        onload: () => console.log("Piano loaded")
+    }).connect(amp)
 };
 
 let currentInstrument = instruments.piano;
+
 
 
 // ----------------------
@@ -573,6 +585,13 @@ async function previewAudio() {
                 Tone.Transport.schedule(time => {
                     chordNotes.forEach(n => {
                         currentInstrument.triggerAttackRelease(n, dur, time);
+                        
+                        // Smooth release tail
+                        const end = time + Tone.Time(dur).toSeconds();
+                        amp.gain.cancelScheduledValues(end);
+                        amp.gain.setValueAtTime(1, end);
+                        amp.gain.linearRampToValueAtTime(0.0, end + 0.05);
+
 
                     });
                 }, transportTime);
@@ -596,6 +615,13 @@ async function previewAudio() {
             if (step > 0) {
                 Tone.Transport.schedule(time => {
                     currentInstrument.triggerAttackRelease(root, dur, time);
+                    
+                    // Smooth release tail
+                    const end = time + Tone.Time(dur).toSeconds();
+                    amp.gain.cancelScheduledValues(end);
+                    amp.gain.setValueAtTime(1, end);
+                    amp.gain.linearRampToValueAtTime(0.0, end + 0.05);
+
 
                 }, bassTime);
             }
