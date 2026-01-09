@@ -1080,11 +1080,10 @@ dropZone.addEventListener("drop", async e => {
     const file = e.dataTransfer.files[0];
     if (!file) return;
 
-    dropZone.textContent = "Loading…";
+    document.querySelector("#audioDropZone .dropLabel").textContent = "Loading…";
 
     try {
         const arrayBuffer = await file.arrayBuffer();
-
         const audioBuffer = await Tone.getContext().rawContext.decodeAudioData(arrayBuffer);
 
         droppedAudioBuffer = audioBuffer;
@@ -1092,28 +1091,29 @@ dropZone.addEventListener("drop", async e => {
         // Draw waveform preview
         drawWaveform(audioBuffer);
 
-
-        droppedAudioBuffer = audioBuffer;
-
+        // Remove old player
         if (droppedAudioPlayer) {
             droppedAudioPlayer.unsync();
             droppedAudioPlayer.stop();
             droppedAudioPlayer.dispose();
         }
 
-        const toneBuffer = new Tone.ToneAudioBuffer(audioBuffer);
+        // Create Tone buffer
+        const toneBuffer = new Tone.ToneAudioBuffer({ url: audioBuffer });
 
+        // Create synced player
         droppedAudioPlayer = new Tone.Player().toDestination();
         droppedAudioPlayer.buffer = toneBuffer;
         droppedAudioPlayer.autostart = false;
         droppedAudioPlayer.sync();
 
-        dropZone.textContent = `Loaded: ${file.name}`;
+        document.querySelector("#audioDropZone .dropLabel").textContent = `Loaded: ${file.name}`;
     } catch (err) {
         console.error(err);
-        dropZone.textContent = "Error loading file";
+        document.querySelector("#audioDropZone .dropLabel").textContent = "Error loading file";
     }
 });
+
 
 function drawWaveform(audioBuffer) {
     const canvas = document.getElementById("waveformCanvas");
