@@ -446,7 +446,7 @@ input:checked + .slider:before {
 }
 
 #audioDropZone {
-    margin-top: 16px;
+    
     width: 100%;
     height: 90px;
     border: 2px dashed #1f2937;
@@ -459,6 +459,9 @@ input:checked + .slider:before {
     font-size: 14px;
     text-align: center;
     transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+    position: relative;
+    gap: 10px; /* increases spacing between label and waveform */ 
+    padding: 16px;
 }
 
 #audioDropZone.dragover {
@@ -470,9 +473,14 @@ input:checked + .slider:before {
 #waveformCanvas {
     width: 100%;
     height: 80px;
-    margin-top: 8px;
+    
     background: #0a0f1a;
     border-radius: 6px;
+}
+
+#audioDropZone .dropLabel {
+    display: block;
+    width: 100%;
 }
 
     
