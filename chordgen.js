@@ -697,11 +697,10 @@ async function previewAudio() {
         Tone.Transport.loopEnd = totalDuration;
     }
     
-    if (droppedAudioPlayer) {
-        Tone.Transport.scheduleOnce(time => {
-            droppedAudioPlayer.restart(time); // <-- restart works with sync()
-        }, 0);
-    }
+if (droppedAudioPlayer) {
+    droppedAudioPlayer.start(5);
+}
+
 
 
 
@@ -1080,25 +1079,23 @@ dropZone.addEventListener("drop", async e => {
     const file = e.dataTransfer.files[0];
     if (!file) return;
 
-    document.querySelector("#audioDropZone .dropLabel").textContent = "Loading…";
+    dropZone.textContent = "Loading…";
 
     try {
         const arrayBuffer = await file.arrayBuffer();
+
+        // Decode using Tone.js audio context
         const audioBuffer = await Tone.getContext().rawContext.decodeAudioData(arrayBuffer);
 
         droppedAudioBuffer = audioBuffer;
 
-        // Draw waveform preview
-        drawWaveform(audioBuffer);
-
-        // Remove old player
+        // Dispose old player
         if (droppedAudioPlayer) {
-            droppedAudioPlayer.unsync();
             droppedAudioPlayer.stop();
             droppedAudioPlayer.dispose();
         }
 
-        // Wrap in ToneAudioBuffer (this is REQUIRED for Tone.Player)
+        // Wrap in ToneAudioBuffer
         const toneBuffer = new Tone.ToneAudioBuffer(audioBuffer);
 
         // Create new player
@@ -1107,13 +1104,10 @@ dropZone.addEventListener("drop", async e => {
             autostart: false
         }).toDestination();
 
-        // Sync AFTER the buffer is assigned
-        droppedAudioPlayer.sync();
-
-        document.querySelector("#audioDropZone .dropLabel").textContent = `Loaded: ${file.name}`;
+        dropZone.textContent = `Loaded: ${file.name}`;
     } catch (err) {
         console.error(err);
-        document.querySelector("#audioDropZone .dropLabel").textContent = "Error loading file";
+        dropZone.textContent = "Error loading file";
     }
 });
 
