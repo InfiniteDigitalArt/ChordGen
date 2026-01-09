@@ -497,32 +497,67 @@ const reverb = new Tone.Reverb({
     preDelay: 0.02
 }).toDestination();
 
+// ----------------------
+// Piano Sampler
+// ----------------------
+const pianoSampler = new Tone.Sampler({
+    urls: {
+        "A3": "EscuderoM1Piano_A3.wav",
+        "A5": "EscuderoM1Piano_A5.wav",
+        "B2": "EscuderoM1Piano_B2.wav",
+        "B4": "EscuderoM1Piano_B4.wav",
+        "C2": "EscuderoM1Piano_C2.wav",
+        "C4": "EscuderoM1Piano_C4.wav",
+        "C6": "EscuderoM1Piano_C6.wav",
+        "D3": "EscuderoM1Piano_D3.wav",
+        "D5": "EscuderoM1Piano_D5.wav",
+        "E3": "EscuderoM1Piano_E3.wav",
+        "E4": "EscuderoM1Piano_E4.wav",
+        "F3": "EscuderoM1Piano_F3.wav",
+        "F5": "EscuderoM1Piano_F5.wav",
+        "G2": "EscuderoM1Piano_G2.wav",
+        "G4": "EscuderoM1Piano_G4.wav"
+    },
+    baseUrl: "DancePiano/",
+    release: 0.3
+}).connect(reverb);
+
+// ----------------------
+// Strings Sampler
+// ----------------------
+const stringsSampler = new Tone.Sampler({
+    urls: {
+        "C1": "S_000_036_c1.wav",
+        "F#1": "S_000_042_f#1.wav",
+        "C2": "S_000_048_c2.wav",
+        "F#2": "S_000_054_f#2.wav",
+        "C3": "S_000_060_c3.wav",
+        "F#3": "S_000_066_f#3.wav",
+        "C4": "S_000_072_c4.wav",
+        "F#4": "S_000_078_f#4.wav",
+        "C5": "S_000_084_c5.wav"
+    },
+    baseUrl: "Strings/",
+    release: 0.4
+}).connect(reverb);
+
+// ----------------------
+// Instrument Registry
+// ----------------------
 const instruments = {
-    piano: new Tone.Sampler({
-        urls: {
-            "A3": "EscuderoM1Piano_A3.wav",
-            "A5": "EscuderoM1Piano_A5.wav",
-            "B2": "EscuderoM1Piano_B2.wav",
-            "B4": "EscuderoM1Piano_B4.wav",
-            "C2": "EscuderoM1Piano_C2.wav",
-            "C4": "EscuderoM1Piano_C4.wav",
-            "C6": "EscuderoM1Piano_C6.wav",
-            "D3": "EscuderoM1Piano_D3.wav",
-            "D5": "EscuderoM1Piano_D5.wav",
-            "E3": "EscuderoM1Piano_E3.wav",
-            "E4": "EscuderoM1Piano_E4.wav",
-            "F3": "EscuderoM1Piano_F3.wav",
-            "F5": "EscuderoM1Piano_F5.wav",
-            "G2": "EscuderoM1Piano_G2.wav",
-            "G4": "EscuderoM1Piano_G4.wav"
-        },
-        baseUrl: "DancePiano/",
-        release: 0.3
-    }).connect(reverb)
+    piano: pianoSampler,
+    strings: stringsSampler
 };
 
+// Default instrument
 let currentInstrument = instruments.piano;
 
+// ----------------------
+// Instrument Selector
+// ----------------------
+document.getElementById("instrumentSelector").addEventListener("change", e => {
+    currentInstrument = instruments[e.target.value];
+});
 
 
 
@@ -997,5 +1032,11 @@ function updateProgressionDisplay() {
     document.getElementById("progressionText").textContent =
         `Prog: ${progressionSymbols}`;
 }
+
+document.getElementById("instrumentSelector").addEventListener("change", e => {
+    const choice = e.target.value;
+    currentInstrument = instruments[choice];
+});
+
 
 
