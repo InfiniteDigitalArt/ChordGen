@@ -1106,6 +1106,8 @@ dropZone.addEventListener("drop", async e => {
             autostart: false
         }).toDestination();
 
+        droppedAudioPlayer.sync();
+
 
         dropZone.textContent = `Loaded: ${file.name}`;
     } catch (err) {
