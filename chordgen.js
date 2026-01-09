@@ -697,18 +697,16 @@ async function previewAudio() {
         Tone.Transport.loopEnd = totalDuration;
     }
     
+const ctx = Tone.getContext().rawContext;
+const startTime = ctx.currentTime + 0.1; // small delay so everything is ready
+
 if (droppedAudioPlayer) {
-    droppedAudioPlayer.start(5);
+    droppedAudioPlayer.start(startTime);
 }
 
-
-
-
-    Tone.Transport.start();
-    requestAnimationFrame(animateCursor);
-
+Tone.Transport.start(startTime);
+requestAnimationFrame(animateCursor);
 }
-
 
 
 // ----------------------
