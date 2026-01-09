@@ -990,16 +990,18 @@ stopBtn.onclick = () => {
     Tone.Transport.cancel();
     Tone.Transport.position = 0;
     Tone.Transport.ticks = 0;
-    if (droppedAudioPlayer) {
-    droppedAudioPlayer.stop();
-}
 
+    if (droppedAudioPlayer) {
+        droppedAudioPlayer.unsync();  // <-- FIX
+        droppedAudioPlayer.stop();
+    }
 
     currentInstrument.releaseAll();
 
     cursorX = 0;
     drawPianoRoll();
 };
+
 
 
 const loopBtn = document.getElementById("loopBtn");
