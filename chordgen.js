@@ -4,6 +4,8 @@
 let totalDuration = Tone.Time("4m").toSeconds(); // default 4 bars
 let lastProgressionSignature = "";
 let droppedAudioPlayer = null;
+let droppedAudioBuffer = null;
+
 
 
 
@@ -696,6 +698,11 @@ async function previewAudio() {
     }
     
     if (droppedAudioPlayer) {
+        droppedAudioPlayer.stop();
+    }
+
+
+    if (droppedAudioPlayer) {
     droppedAudioPlayer.start(0); // start at beginning
 }
 
@@ -1051,36 +1058,59 @@ document.getElementById("instrumentSelector").addEventListener("change", e => {
 
 const dropZone = document.getElementById("audioDropZone");
 
+// Highlight on dragover
 dropZone.addEventListener("dragover", e => {
     e.preventDefault();
+    e.stopPropagation();
     dropZone.classList.add("dragover");
 });
 
-dropZone.addEventListener("dragleave", () => {
+// Remove highlight when leaving
+dropZone.addEventListener("dragleave", e => {
+    e.preventDefault();
     dropZone.classList.remove("dragover");
 });
 
+// Handle file drop
 dropZone.addEventListener("drop", async e => {
     e.preventDefault();
+    e.stopPropagation();
     dropZone.classList.remove("dragover");
 
     const file = e.dataTransfer.files[0];
     if (!file) return;
 
-    const arrayBuffer = await file.arrayBuffer();
+    dropZone.textContent = "Loading…";
 
-    // Stop previous audio if any
-    if (droppedAudioPlayer) {
-        droppedAudioPlayer.stop();
-        droppedAudioPlayer.dispose();
+    try {
+        const arrayBuffer = await file.arrayBuffer();
+
+        // Decode using Tone.js audio context
+        const audioBuffer = await Tone.getContext().rawContext.decodeAudioData(arrayBuffer);
+
+        droppedAudioBuffer = audioBuffer;
+
+        // Create a new player
+        if (droppedAudioPlayer) {
+            droppedAudioPlayer.stop();
+            droppedAudioPlayer.dispose();
+        }
+
+        const toneBuffer = new Tone.ToneAudioBuffer(audioBuffer);
+
+        droppedAudioPlayer = new Tone.Player({
+            url: toneBuffer,
+            autostart: false
+        }).toDestination();
+
+
+        dropZone.textContent = `Loaded: ${file.name}`;
+    } catch (err) {
+        console.error(err);
+        dropZone.textContent = "Error loading file";
     }
-
-    // Create new Tone.Player
-    droppedAudioPlayer = new Tone.Player().toDestination();
-    await droppedAudioPlayer.load(arrayBuffer);
-
-    dropZone.textContent = `Loaded: ${file.name}`;
 });
+
 
 
 
