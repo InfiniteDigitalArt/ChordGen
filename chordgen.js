@@ -1099,7 +1099,7 @@ dropZone.addEventListener("drop", async e => {
         }
 
         // Create Tone buffer
-        const toneBuffer = new Tone.ToneAudioBuffer({ url: audioBuffer });
+        const toneBuffer = new Tone.ToneAudioBuffer(audioBuffer);
 
         // Create synced player
         droppedAudioPlayer = new Tone.Player().toDestination();
