@@ -698,7 +698,7 @@ async function previewAudio() {
     }
     
 const ctx = Tone.getContext().rawContext;
-const startTime = ctx.currentTime + 0.1; // small delay so everything is ready
+const startTime = ctx.currentTime + 0.5; // small delay so everything is ready
 
 if (droppedAudioPlayer) {
     droppedAudioPlayer.start(startTime);
