@@ -538,8 +538,8 @@ const stringsSampler = new Tone.Sampler({
         "C5": "S_000_084_c5.wav"
     },
     baseUrl: "Strings/",
-    release: 0.5
-    pitchShift: -12
+    release: 0.5,
+    transpose: -12
 }).connect(reverb);
 
 // ----------------------
