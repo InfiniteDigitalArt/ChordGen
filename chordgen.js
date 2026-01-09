@@ -492,23 +492,23 @@ if (!root || typeof root !== "string" || !/\d$/.test(root)) {
 const instruments = {
     piano: new Tone.Sampler({
         urls: {
-            "A3": "EscuderoM1Piano A3.wav",
-            "A5": "EscuderoM1Piano A5.wav",
-            "B2": "EscuderoM1Piano B2.wav",
-            "B4": "EscuderoM1Piano B4.wav",
-            "C2": "EscuderoM1Piano C2.wav",
-            "C4": "EscuderoM1Piano C4.wav",
-            "C6": "EscuderoM1Piano C6.wav",
-            "D3": "EscuderoM1Piano D3.wav",
-            "D5": "EscuderoM1Piano D5.wav",
-            "E3": "EscuderoM1Piano E3.wav",
-            "E4": "EscuderoM1Piano E4.wav",
-            "F3": "EscuderoM1Piano F3.wav",
-            "F5": "EscuderoM1Piano F5.wav",
-            "G2": "EscuderoM1Piano G2.wav",
-            "G4": "EscuderoM1Piano G4.wav"
+            "A3": "EscuderoM1Piano_A3.wav",
+            "A5": "EscuderoM1Piano_A5.wav",
+            "B2": "EscuderoM1Piano_B2.wav",
+            "B4": "EscuderoM1Piano_B4.wav",
+            "C2": "EscuderoM1Piano_C2.wav",
+            "C4": "EscuderoM1Piano_C4.wav",
+            "C6": "EscuderoM1Piano_C6.wav",
+            "D3": "EscuderoM1Piano_D3.wav",
+            "D5": "EscuderoM1Piano_D5.wav",
+            "E3": "EscuderoM1Piano_E3.wav",
+            "E4": "EscuderoM1Piano_E4.wav",
+            "F3": "EscuderoM1Piano_F3.wav",
+            "F5": "EscuderoM1Piano_F5.wav",
+            "G2": "EscuderoM1Piano_G2.wav",
+            "G4": "EscuderoM1Piano_G4.wav"
         },
-        baseUrl: "Dance Piano/"
+        baseUrl: "DancePiano/"
     }).toDestination(),
 };
 
