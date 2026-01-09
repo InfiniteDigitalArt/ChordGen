@@ -17,6 +17,57 @@ body {
 }
 
 /* --------------------------------------------------
+   Shared Button Style (Generate / Export / Transport)
+-------------------------------------------------- */
+
+.btn-icon {
+    width: 16px;
+    height: 16px;
+    fill: #9ccfff; /* visible, soft neon */
+    opacity: 0.9;
+    transition: fill 0.2s ease, opacity 0.2s ease;
+}
+
+.btn-standard:hover .btn-icon {
+    fill: #ffffff;
+    opacity: 1;
+}
+
+
+.btn-standard {
+    padding: 10px 18px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    background: #1e293b;
+    color: #e5e7eb;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.btn-standard:hover {
+    box-shadow: 0 0 8px #0074C9;
+    transform: translateY(-1px);
+}
+
+/* Neon blue active state (Loop ON, Export MIDI) */
+.btn-standard.active,
+#exportBtn {
+    background: #0074C9 !important;
+    color: #ffffff;
+    box-shadow: 0 0 10px #0074C9;
+}
+
+.btn-standard.active:hover,
+#exportBtn:hover {
+    box-shadow: 0 0 14px #00aaff;
+}
+
+/* --------------------------------------------------
    Toolbar
 -------------------------------------------------- */
 
@@ -27,17 +78,16 @@ body {
     border-bottom: 1px solid #1f2937;
     display: flex;
     align-items: center;
-    justify-content: center; /* center the whole group */
+    justify-content: center;
     position: fixed;
     top: 0;
     left: 0;
     z-index: 10;
 }
 
-
 .toolbar-left,
 .toolbar-right {
-    flex: 1; /* equal space on both sides */
+    flex: 1;
     display: flex;
     align-items: center;
 }
@@ -46,7 +96,6 @@ body {
     display: flex;
     justify-content: center;
 }
-
 
 .rr-logo {
     height: 40px;
@@ -67,34 +116,6 @@ body {
     display: flex;
     align-items: center;
     gap: 16px;
-}
-
-.toolbar-controls button {
-    padding: 10px 18px;
-    border-radius: 8px;
-    border: none;
-    cursor: pointer;
-    font-weight: 600;
-    background: #1e293b;
-    color: #e5e7eb;
-    font-size: 14px;
-    transition: box-shadow 0.2s ease;
-}
-
-.toolbar-controls button:hover {
-    box-shadow: 0 0 8px #0074C9;
-}
-
-/* Export button in neon blue */
-
-#exportBtn {
-    background: #0074C9 !important;
-    color: #ffffff;
-    box-shadow: 0 0 10px #0074C9;
-}
-
-#exportBtn:hover {
-    box-shadow: 0 0 14px #00aaff;
 }
 
 /* --------------------------------------------------
@@ -174,6 +195,49 @@ input:checked + .slider:before {
 }
 
 /* --------------------------------------------------
+   Transport Bar
+-------------------------------------------------- */
+
+.transport-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+
+    background: #0f172a;
+    border: 1px solid #1f2937;
+    padding: 14px 20px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+
+    box-shadow: 0 0 20px rgba(0, 116, 201, 0.25);
+}
+
+
+.transport-btn.active .btn-icon {
+    fill: #ffffff;
+    opacity: 1;
+}
+
+/* Tempo slider */
+.tempo-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #dbeafe;
+    font-weight: 600;
+}
+
+#tempoSlider {
+    width: 160px;
+}
+
+#tempoValue {
+    color: #00aaff;
+    font-weight: 700;
+}
+
+/* --------------------------------------------------
    Chord Cards
 -------------------------------------------------- */
 
@@ -232,7 +296,7 @@ input:checked + .slider:before {
 
 .status {
     margin-top: 16px;
-    font-size: 14px;
+    font-size: 16px;
     color: #9ca3af;
     text-align: center;
 }
@@ -242,3 +306,144 @@ input:checked + .slider:before {
 -------------------------------------------------- */
 
 @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap');
+
+/* --------------------------------------------------
+   Mobile
+-------------------------------------------------- */
+
+@media (max-width: 700px) {
+
+    /* Toolbar becomes vertical and compact */
+    .toolbar {
+        height: auto;
+        padding: 12px 0;
+    }
+
+    .toolbar-left,
+    .toolbar-right {
+        display: none;
+    }
+
+    .toolbar-controls {
+        flex-direction: column;
+        gap: 12px;
+        width: 100%;
+        align-items: center;
+        text-align: center;
+    }
+
+    .rr-logo {
+        height: 32px;
+        margin-right: 0;
+    }
+
+    .app-title {
+        font-size: 16px;
+        margin-bottom: 4px;
+    }
+
+    /* Toggles center nicely */
+    .mode-toggle,
+    .count-toggle {
+        flex-direction: row;
+        justify-content: center;
+        width: 100%;
+    }
+
+    /* Buttons become full-width for touch */
+    .btn-standard {
+        width: 100%;
+        max-width: 260px;
+        justify-content: center;
+    }
+
+    /* Transport bar stacks vertically */
+    .transport-bar {
+        flex-direction: column;
+        gap: 16px;
+        width: 100%;
+    }
+
+    .transport-btn {
+        width: 100%;
+        max-width: 260px;
+        justify-content: center;
+    }
+
+    /* Container pushed down to clear taller mobile toolbar */
+    .container {
+        margin-top: 260px;
+    }
+}
+
+
+.info-text {
+    margin-top: 8px;
+    font-size: 15px;
+    color: #6b7280; /* soft grey-blue */
+    text-align: center;
+    line-height: 1.4;
+    opacity: 0.85;
+    user-select: none;
+}
+
+#progressionText {
+    margin-top: 4px;
+    font-size: 14px;
+    color: #9ca3af;
+    text-align: center;
+    opacity: 0.9;
+}
+
+.rhythm-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: 16px;
+}
+
+.rhythm-select {
+    padding: 4px 8px;
+    background: #020617;
+    color: #e5e7eb;
+    border: 1px solid #1f2937;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.scale-select {
+    padding: 4px 8px;
+    background: #020617;
+    color: #e5e7eb;
+    border: 1px solid #1f2937;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.scale-select::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.scale-select::-webkit-scrollbar-track {
+    background: #0f172a;
+    border-radius: 4px;
+}
+
+.scale-select::-webkit-scrollbar-thumb {
+    background-color: #1e293b;
+    border-radius: 4px;
+    border: 2px solid #0f172a;
+}
+
+.scale-select::-webkit-scrollbar-thumb:hover {
+    background-color: #334155;
+}
+
+.scale-select {
+    scrollbar-width: thin;
+    scrollbar-color: #1e293b #0f172a;
+}
+
+
+
