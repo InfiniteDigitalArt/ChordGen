@@ -347,7 +347,8 @@ if (!ctx) {
 }
 
     canvas.width = canvas.clientWidth;
-    canvas.height = canvas.clientHeight;
+    canvas.style.height = "400px"; 
+    canvas.height = 400;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
