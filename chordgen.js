@@ -179,10 +179,11 @@ function buildSusChords(scale, isMinor=false) {
 // ----------------------
 
 const FUNCTIONAL_GROUPS = {
-    tonic:    [0, 5],
-    pre:      [1, 3],
-    dominant: [4]
+    tonic:    [0, 2, 3, 5],   // I, iii, IV, vi
+    pre:      [1, 3, 5],      // ii, IV, vi
+    dominant: [4, 6, 2]       // V, vii°, iii
 };
+
 
 function generateFunctionalProgression() {
     let progression;
