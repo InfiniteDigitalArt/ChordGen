@@ -703,10 +703,13 @@ async function previewAudio() {
 
 
     if (droppedAudioPlayer) {
-    droppedAudioPlayer.start(0); // start at beginning
-}
+        Tone.Transport.scheduleOnce(time => {
+            droppedAudioPlayer.start(time);
+        }, 0);
+    }
 
-    Tone.Transport.start("+0.05");
+
+    Tone.Transport.start();
     requestAnimationFrame(animateCursor);
 
 }
