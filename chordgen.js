@@ -1077,40 +1077,37 @@ dropZone.addEventListener("drop", async e => {
     const file = e.dataTransfer.files[0];
     if (!file) return;
 
-    dropZone.textContent = "Loading…";
+    document.querySelector("#audioDropZone .dropLabel").textContent = "Loading…";
 
     try {
         const arrayBuffer = await file.arrayBuffer();
-
-        // Decode using Tone.js audio context
         const audioBuffer = await Tone.getContext().rawContext.decodeAudioData(arrayBuffer);
 
+        // Normalize in place
         normalizeAudioBuffer(audioBuffer);
+
+        // Store and draw
         droppedAudioBuffer = audioBuffer;
         drawWaveform(audioBuffer);
 
-
-        // Dispose old player
+        // Remove old player
         if (droppedAudioPlayer) {
             droppedAudioPlayer.stop();
             droppedAudioPlayer.dispose();
         }
 
-        // Wrap in ToneAudioBuffer
-        const toneBuffer = new Tone.ToneAudioBuffer(audioBuffer);
+        // Create player using the normalized buffer directly
+        droppedAudioPlayer = new Tone.Player().toDestination();
+        droppedAudioPlayer.buffer = audioBuffer;
+        droppedAudioPlayer.autostart = false;
 
-        // Create new player
-        droppedAudioPlayer = new Tone.Player({
-            url: toneBuffer,
-            autostart: false
-        }).toDestination();
-
-        dropZone.textContent = `Loaded: ${file.name}`;
+        document.querySelector("#audioDropZone .dropLabel").textContent = `Loaded: ${file.name}`;
     } catch (err) {
         console.error(err);
-        dropZone.textContent = "Error loading file";
+        document.querySelector("#audioDropZone .dropLabel").textContent = "Error loading file";
     }
 });
+
 
 
 
