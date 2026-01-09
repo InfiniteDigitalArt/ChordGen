@@ -1,8 +1,17 @@
 // ----------------------
 // Music theory engine
 // ----------------------
+let totalDuration = Tone.Time("4m").toSeconds(); // default 4 bars
+let lastProgressionSignature = "";
+
+
 
 const NOTES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+
+function progressionSignature(prog) {
+    return prog.map(ch => `${ch.name}${ch.quality}`).join("-");
+}
+
 
 function scaleMidiSet(scale) {
     const set = new Set();
@@ -102,6 +111,20 @@ function addEDMExtensions(chord) {
     return chord;
 }
 
+function getSelectedKey() {
+    const sel = document.getElementById("scaleSelector").value;
+
+    if (sel === "random") {
+        return randomKey(); // your existing random system
+    }
+
+    const [root, type] = sel.split(" ");
+    const isMinor = type === "minor";
+
+    return { root, isMinor };
+}
+
+
 
 
 
@@ -115,7 +138,7 @@ function buildSusChords(scale, isMinor=false) {
         const fourth = scale[(i + 3) % 7];
         const fifth = scale[(i + 4) % 7];
 
-        const bass = root + "3";
+        const bass = root + "2";
 
         const sus2 = {
             name: root,
@@ -158,64 +181,61 @@ const FUNCTIONAL_GROUPS = {
 };
 
 function generateFunctionalProgression() {
-    const { root, isMinor } = randomKey();
-    const scale = buildScale(root, isMinor);
-    const chords = buildTriads(scale, isMinor);
+    let progression;
+    let signature;
 
-    // Store globally for chord picker
-    currentScale = scale;
-    currentIsMinor = isMinor;
+    // Keep generating until it's different from the last one
+    do {
+        const { root, isMinor } = getSelectedKey();
+        const scale = buildScale(root, isMinor);
+        const chords = buildTriads(scale, isMinor);
 
-    function pick(group) {
-        // Map indices to chord objects
-        let candidates = group.map(i => chords[i]);
+        // Store globally for chord picker
+        currentScale = scale;
+        currentIsMinor = isMinor;
 
-        // Remove diminished chords entirely
-        candidates = candidates.filter(ch => ch.quality !== "dim");
-
-        // Safety: if filtering removed everything, fall back to the first chord in the group
-        if (candidates.length === 0) {
-            return chords[group[0]];
+        function pick(group) {
+            let candidates = group.map(i => chords[i]);
+            candidates = candidates.filter(ch => ch.quality !== "dim");
+            if (candidates.length === 0) return chords[group[0]];
+            return candidates[Math.floor(Math.random() * candidates.length)];
         }
 
-        // Pick randomly from remaining chords
-        return candidates[Math.floor(Math.random() * candidates.length)];
-    }
+        const chordCount = document.getElementById("countToggle").checked ? 8 : 4;
+        progression = [];
 
+        for (let i = 0; i < chordCount; i++) {
+            const group = i % 4 === 0 ? FUNCTIONAL_GROUPS.tonic :
+                          i % 4 === 1 ? FUNCTIONAL_GROUPS.pre :
+                          i % 4 === 2 ? FUNCTIONAL_GROUPS.dominant :
+                                        FUNCTIONAL_GROUPS.tonic;
 
+            progression.push({ ...pick(group) });
+        }
 
+        if (document.getElementById("modeToggle").checked) {
+            progression = progression.map(ch => {
+                if (Math.random() < 0.4) {
+                    return addEDMExtensions({ ...ch });
+                }
+                return ch;
+            });
+        }
 
+        signature = progressionSignature(progression);
 
-    const chordCount = document.getElementById("countToggle").checked ? 8 : 4;
+    } while (signature === lastProgressionSignature);
 
-    let progression = [];
+    // Store signature so next generation is different
+    lastProgressionSignature = signature;
 
-    for (let i = 0; i < chordCount; i++) {
-        const group = i % 4 === 0 ? FUNCTIONAL_GROUPS.tonic :
-                      i % 4 === 1 ? FUNCTIONAL_GROUPS.pre :
-                      i % 4 === 2 ? FUNCTIONAL_GROUPS.dominant :
-                                    FUNCTIONAL_GROUPS.tonic;
-
-        progression.push({ ...pick(group) });
-    }
-
-    if (document.getElementById("modeToggle").checked) {
-        progression = progression.map(ch => {
-            if (Math.random() < 0.4) {
-                return addEDMExtensions({ ...ch });
-            }
-            return ch;
-        });
-    }
-
-    // ⭐ THIS WAS MISSING
+    // Update global progression
     currentProgression = progression;
 
-    // Update UI
     updateProgressionDisplay();
 
     return {
-        key: `${root} ${isMinor ? "minor" : "major"}`,
+        key: `${currentScale[0]} ${currentIsMinor ? "minor" : "major"}`,
         progression
     };
 }
@@ -372,6 +392,32 @@ if (!ctx) {
         ctx.stroke();
     }
 
+    // -----------------------------
+    // TIME GRID (vertical lines)
+    // -----------------------------
+    const totalBeats = 4 * 4; // 4 bars * 4 beats per bar
+    const sixteenthCount = totalBeats * 4; // 16 sixteenths per bar * 4 bars
+
+    for (let i = 0; i <= sixteenthCount; i++) {
+        const x = (i / sixteenthCount) * canvas.width;
+
+        // Quarter note line (every 4 sixteenths)
+        if (i % 4 === 0) {
+            ctx.strokeStyle = "#0a0f1c";
+            ctx.lineWidth = 1.5;
+        }
+        // Sixteenth note line
+        else {
+            ctx.strokeStyle = "#0a0f1c83";
+            ctx.lineWidth = 1;
+        }
+
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+    }
+
     // CHORDS (no bass)
     let cursor = 0;
 
@@ -439,51 +485,35 @@ if (!root || typeof root !== "string" || !/\d$/.test(root)) {
 }
 
 
-
-
-
-
 // ----------------------
 // Tone.js playback
 // ----------------------
 
-const piano = new Tone.Sampler({
-    urls: {
-        "A0": "A0.mp3",
-        "C1": "C1.mp3",
-        "D#1": "Ds1.mp3",
-        "F#1": "Fs1.mp3",
-        "A1": "A1.mp3",
-        "C2": "C2.mp3",
-        "D#2": "Ds2.mp3",
-        "F#2": "Fs2.mp3",
-        "A2": "A2.mp3",
-        "C3": "C3.mp3",
-        "D#3": "Ds3.mp3",
-        "F#3": "Fs3.mp3",
-        "A3": "A3.mp3",
-        "C4": "C4.mp3",
-        "D#4": "Ds4.mp3",
-        "F#4": "Fs4.mp3",
-        "A4": "A4.mp3",
-        "C5": "C5.mp3",
-        "D#5": "Ds5.mp3",
-        "F#5": "Fs5.mp3",
-        "A5": "A5.mp3",
-        "C6": "C6.mp3",
-        "D#6": "Ds6.mp3",
-        "F#6": "Fs6.mp3",
-        "A6": "A6.mp3",
-        "C7": "C7.mp3",
-        "D#7": "Ds7.mp3",
-        "F#7": "Fs7.mp3",
-        "A7": "A7.mp3",
-        "C8": "C8.mp3"
-    },
-    baseUrl: "https://tonejs.github.io/audio/salamander/"
-}).toDestination();
+const instruments = {
+    piano: new Tone.Sampler({
+        urls: {
+            "A3": "EscuderoM1Piano A3.wav",
+            "A5": "EscuderoM1Piano A5.wav",
+            "B2": "EscuderoM1Piano B2.wav",
+            "B4": "EscuderoM1Piano B4.wav",
+            "C2": "EscuderoM1Piano C2.wav",
+            "C4": "EscuderoM1Piano C4.wav",
+            "C6": "EscuderoM1Piano C6.wav",
+            "D3": "EscuderoM1Piano D3.wav",
+            "D5": "EscuderoM1Piano D5.wav",
+            "E3": "EscuderoM1Piano E3.wav",
+            "E4": "EscuderoM1Piano E4.wav",
+            "F3": "EscuderoM1Piano F3.wav",
+            "F5": "EscuderoM1Piano F5.wav",
+            "G2": "EscuderoM1Piano G2.wav",
+            "G4": "EscuderoM1Piano G4.wav"
+        },
+        baseUrl: "Dance Piano/"
+    }).toDestination(),
+};
 
-piano.volume.value = 0;
+let currentInstrument = instruments.piano;
+
 
 // ----------------------
 // Preview Audio (FINAL)
@@ -493,12 +523,15 @@ async function previewAudio() {
     if (!currentProgression.length) return;
 
     await Tone.start();
+    await currentInstrument.loaded;
 
+    // Reset transport completely
     Tone.Transport.stop();
     Tone.Transport.cancel();
     Tone.Transport.position = 0;
+    Tone.Transport.ticks = 0;
 
-    piano.releaseAll();
+    currentInstrument.releaseAll();
 
     const canvas = document.getElementById("pianoRoll");
 
@@ -508,92 +541,112 @@ async function previewAudio() {
     cursorX = 0;
     isPlaying = true;
 
-    let tickTime = 0; // <-- master tick counter
+    // -----------------------------
+    // UNIT → MUSICAL DURATION MAP
+    // -----------------------------
+    function unitToToneDuration(units) {
+        switch (units) {
+            case 1: return "16n"; // sixteenth
+            case 2: return "8n";  // eighth
+            case 4: return "4n";  // quarter
+            case 8: return "2n";  // half
+            case 16: return "1m"; // whole bar
+            default: return "16n";
+        }
+    }
 
-    // -------------------------
-    // CHORDS (no bass)
-    // -------------------------
+    // -----------------------------
+    // AUDIO ENGINE (Transport time)
+    // -----------------------------
+    let transportTime = 0; // in seconds, relative to Transport
+
+    // CHORDS (upper notes)
     currentProgression.forEach(chord => {
         const chordNotes = chord.notes.slice(1);
 
         rhythm.chords.forEach(step => {
+            const units = step === 0 ? 1 : step;
+            const dur = unitToToneDuration(units);
+            const durSeconds = Tone.Time(dur).toSeconds();
+
             if (step > 0 && chordNotes.length) {
                 Tone.Transport.schedule(time => {
                     chordNotes.forEach(n => {
-                        piano.triggerAttackRelease(n, "T" + step, time);
+                        currentInstrument.triggerAttackRelease(n, dur, time);
+
                     });
-                }, "T" + tickTime);
+                }, transportTime);
             }
 
-            tickTime += step; // <-- accumulate ticks
+            transportTime += durSeconds;
         });
     });
 
-    // -------------------------
     // BASS (root only)
-    // -------------------------
-    let bassTick = 0; // <-- separate counter for bass scheduling
+    let bassTime = 0;
 
     currentProgression.forEach(chord => {
         const root = chord.notes[0];
 
         rhythm.bass.forEach(step => {
+            const units = step === 0 ? 1 : step;
+            const dur = unitToToneDuration(units);
+            const durSeconds = Tone.Time(dur).toSeconds();
+
             if (step > 0) {
                 Tone.Transport.schedule(time => {
-                    piano.triggerAttackRelease(root, "T" + step, time);
-                }, "T" + bassTick);
+                    currentInstrument.triggerAttackRelease(root, dur, time);
+
+                }, bassTime);
             }
 
-            bassTick += step;
+            bassTime += durSeconds;
         });
     });
 
-    // -------------------------
-    // TOTAL LENGTH = chord timeline
-    // -------------------------
-    const totalTicks = tickTime;  // <-- correct
+    // Total duration in seconds (use the longest of chords/bass)
+    totalDuration = Math.max(transportTime, bassTime);
+    
 
+
+    // -----------------------------
+    // CURSOR + LOOP ENGINE
+    // -----------------------------
+    // We'll use seconds, not ticks, for the cursor
     function animateCursor() {
         if (!isPlaying) return;
 
-        const elapsedTicks = Tone.Transport.ticks;
-        cursorX = (elapsedTicks / totalTicks) * canvas.width;
+        const elapsed = Tone.Transport.seconds;
+        cursorX = (elapsed / totalDuration) * canvas.width;
 
         drawPianoRoll();
 
-        if (elapsedTicks < totalTicks) {
+        if (elapsed < totalDuration) {
             requestAnimationFrame(animateCursor);
         } else {
-            isPlaying = false;
-            drawPianoRoll();
+            // If looping, keep the cursor alive
+            if (Tone.Transport.loop) {
+                requestAnimationFrame(animateCursor);
+            } else {
+                isPlaying = false;
+                drawPianoRoll();
+            }
         }
     }
 
+
+    // For the loop button: use seconds, converted to Time
+    totalTicks = Tone.Time(totalDuration).toTicks(); // so your existing loop logic still works
+
     Tone.Transport.start("+0.05");
     requestAnimationFrame(animateCursor);
-
-    // expose for loop button
-    window.totalTicks = totalTicks;
 }
-
 
 
 
 // ----------------------
 // MIDI export (FINAL)
 // ----------------------
-
-function unitsToMidiDuration(units) {
-    switch (units) {
-        case 1: return "16"; // sixteenth
-        case 2: return "8";  // eighth
-        case 4: return "4";  // quarter
-        case 8: return "2";  // half
-        case 16: return "1"; // whole
-        default:
-            return "16"; // fallback
-    }
-}
 
 function exportToMIDI() {
     if (!currentProgression.length) return;
@@ -604,60 +657,113 @@ function exportToMIDI() {
     const chordTrack = new MidiWriter.Track();
     const bassTrack  = new MidiWriter.Track();
 
-    chordTrack.setTempo(120);
-    bassTrack.setTempo(120);
+    const bpm = 120;
+    chordTrack.setTempo(bpm);
+    bassTrack.setTempo(bpm);
 
     const REST_UNIT = 1;
 
-    // CHORD TRACK (no bass note)
+    function unitsToMidiDuration(units) {
+        switch (units) {
+            case 1: return "16"; // 1/16
+            case 2: return "8";  // 1/8
+            case 4: return "4";  // 1/4
+            case 8: return "2";  // 1/2
+            case 16: return "1"; // whole bar
+            default: return "16";
+        }
+    }
+
+    // -----------------------------
+    // CHORD TRACK (your working logic)
+    // -----------------------------
     currentProgression.forEach(chord => {
         const chordNotes = chord.notes.slice(1);
+        let pendingRestUnits = 0;
 
         rhythm.chords.forEach(step => {
             const units = step === 0 ? REST_UNIT : step;
-            const dur = unitsToMidiDuration(units);
 
             if (step === 0) {
-                // Rest
-                chordTrack.addEvent(new MidiWriter.NoteEvent({
-                    rest: true,
-                    duration: dur
-                }));
+                pendingRestUnits += units;
             } else {
-                // Notes
-                chordTrack.addEvent(new MidiWriter.NoteEvent({
-                    pitch: chordNotes,
-                    duration: dur
-                }));
+                if (chordNotes.length > 0) {
+                    const duration = unitsToMidiDuration(units);
+                    const eventData = {
+                        pitch: chordNotes,
+                        duration,
+                        velocity: 100
+                    };
+
+                    if (pendingRestUnits > 0) {
+                        eventData.wait = unitsToMidiDuration(pendingRestUnits);
+                        pendingRestUnits = 0;
+                    }
+
+                    chordTrack.addEvent(new MidiWriter.NoteEvent(eventData));
+                } else {
+                    pendingRestUnits += units;
+                }
             }
         });
+
+        // we don't need to encode trailing silence for chords;
+        // it's fine if the track just ends after the last chord hit
     });
 
-    // BASS TRACK (root only)
+    // -----------------------------
+    // BASS TRACK (fixed: continuous timeline, no dummy events)
+    // -----------------------------
+    let bassPendingRestUnits = 0;
+
     currentProgression.forEach(chord => {
         const root = chord.notes[0];
 
         rhythm.bass.forEach(step => {
             const units = step === 0 ? REST_UNIT : step;
-            const dur = unitsToMidiDuration(units);
 
             if (step === 0) {
-                bassTrack.addEvent(new MidiWriter.NoteEvent({
-                    rest: true,
-                    duration: dur
-                }));
+                // accumulate silence
+                bassPendingRestUnits += units;
             } else {
-                bassTrack.addEvent(new MidiWriter.NoteEvent({
-                    pitch: [root],
-                    duration: dur
-                }));
+                // real bass hit
+                if (typeof root === "string" && root.length > 0) {
+                    const duration = unitsToMidiDuration(units);
+                    const eventData = {
+                        pitch: [root],
+                        duration,
+                        velocity: 100
+                    };
+
+                    // apply any accumulated gap before this note
+                    if (bassPendingRestUnits > 0) {
+                        eventData.wait = unitsToMidiDuration(bassPendingRestUnits);
+                        bassPendingRestUnits = 0;
+                    }
+
+                    bassTrack.addEvent(new MidiWriter.NoteEvent(eventData));
+                } else {
+                    // invalid root, treat as more rest
+                    bassPendingRestUnits += units;
+                }
             }
         });
     });
 
-    // Filename: Key + Roman numerals
+    // Note: we intentionally do NOT flush trailing bassPendingRestUnits.
+    // Any final silence after the last bass note doesn't need to be encoded,
+    // and skipping it avoids bar-by-bar drift.
+
+    // -----------------------------
+    // Filename
+    // -----------------------------
     const progressionSymbols = currentProgression
-        .map(ch => romanNumeralForChord(currentScale, currentIsMinor, ch.name, ch.quality))
+        .map(ch => romanNumeralForChord(
+            currentScale,
+            currentIsMinor,
+            ch.name,
+            ch.quality
+        ))
         .join(" ");
 
     const keyName = `${currentScale[0]} ${currentIsMinor ? "minor" : "major"}`;
@@ -681,6 +787,11 @@ function exportToMIDI() {
 
 let currentProgression = [];
 let currentKey = "";
+let currentScale = [];
+let currentIsMinor = false;
+let totalTicks = 0;
+let isPlaying = false;
+
 
 const chordContainer = document.getElementById("chordContainer");
 const statusText = document.getElementById("statusText");
@@ -782,39 +893,56 @@ document.getElementById("tempoSlider").addEventListener("input", e => {
 document.getElementById("playBtn").onclick = async () => {
     console.log("PLAY CLICKED");
 
-    await Tone.start(); // required for audio
-    console.log("Tone started");
+    await Tone.start();
+    await currentInstrument.loaded;
+ // <-- REQUIRED
 
-    previewAudio(); // schedules notes + starts transport
+    previewAudio();
 };
+
+document.getElementById("rhythmSelector").addEventListener("change", () => {
+    drawPianoRoll();
+
+    if (isPlaying) {
+        previewAudio();
+    }
+});
 
 
 const stopBtn = document.getElementById("stopBtn");
 
 stopBtn.onclick = () => {
+    isPlaying = false;
+
     Tone.Transport.stop();
     Tone.Transport.cancel();
-    piano.releaseAll();
-    isPlaying = false;
+    Tone.Transport.position = 0;
+    Tone.Transport.ticks = 0;
+
+    currentInstrument.releaseAll();
+
+    cursorX = 0;
     drawPianoRoll();
 };
+
 
 const loopBtn = document.getElementById("loopBtn");
 let isLooping = false;
 
 loopBtn.onclick = () => {
     isLooping = !isLooping;
-
     loopBtn.classList.toggle("active", isLooping);
 
     if (isLooping) {
         Tone.Transport.loop = true;
-        Tone.Transport.loopStart = "T0";
-        Tone.Transport.loopEnd = "T" + totalTicks; // <-- correct
+        Tone.Transport.loopStart = 0;
+        Tone.Transport.loopEnd = totalDuration;
     } else {
         Tone.Transport.loop = false;
     }
 };
+
+
 
 
 function romanNumeralForChord(scale, isMinor, chordName, quality) {
@@ -849,3 +977,5 @@ function updateProgressionDisplay() {
     document.getElementById("progressionText").textContent =
         `Prog: ${progressionSymbols}`;
 }
+
+
