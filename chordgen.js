@@ -1098,12 +1098,8 @@ dropZone.addEventListener("drop", async e => {
             droppedAudioPlayer.dispose();
         }
 
-        // Create Tone buffer
-        const toneBuffer = new Tone.ToneAudioBuffer(audioBuffer);
-
-        // Create synced player
-        droppedAudioPlayer = new Tone.Player().toDestination();
-        droppedAudioPlayer.buffer = toneBuffer;
+        // Create synced player directly from decoded buffer
+        droppedAudioPlayer = new Tone.Player(audioBuffer).toDestination();
         droppedAudioPlayer.autostart = false;
         droppedAudioPlayer.sync();
 
@@ -1111,6 +1107,7 @@ dropZone.addEventListener("drop", async e => {
     } catch (err) {
         console.error(err);
         document.querySelector("#audioDropZone .dropLabel").textContent = "Error loading file";
+    
     }
 });
 
