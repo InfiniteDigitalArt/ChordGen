@@ -698,15 +698,11 @@ async function previewAudio() {
     }
     
     if (droppedAudioPlayer) {
-        droppedAudioPlayer.stop();
-    }
-
-
-    if (droppedAudioPlayer) {
         Tone.Transport.scheduleOnce(time => {
-            droppedAudioPlayer.start(time);
+            droppedAudioPlayer.restart(time); // <-- restart works with sync()
         }, 0);
     }
+
 
 
     Tone.Transport.start();
