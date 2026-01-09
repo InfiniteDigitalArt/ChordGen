@@ -698,7 +698,7 @@ async function previewAudio() {
     }
     
 const ctx = Tone.getContext().rawContext;
-const startTime = ctx.currentTime + 0.5; // small delay so everything is ready
+const startTime = ctx.currentTime + 0.2; // small delay so everything is ready
 
 if (droppedAudioPlayer) {
     droppedAudioPlayer.start(startTime);
@@ -1085,7 +1085,10 @@ dropZone.addEventListener("drop", async e => {
         // Decode using Tone.js audio context
         const audioBuffer = await Tone.getContext().rawContext.decodeAudioData(arrayBuffer);
 
+        normalizeAudioBuffer(audioBuffer);
         droppedAudioBuffer = audioBuffer;
+        drawWaveform(audioBuffer);
+
 
         // Dispose old player
         if (droppedAudioPlayer) {
@@ -1147,6 +1150,36 @@ function drawWaveform(audioBuffer) {
 
     ctx.stroke();
 }
+
+function normalizeAudioBuffer(audioBuffer) {
+    const numberOfChannels = audioBuffer.numberOfChannels;
+    let maxSample = 0;
+
+    // Find the peak sample across all channels
+    for (let ch = 0; ch < numberOfChannels; ch++) {
+        const data = audioBuffer.getChannelData(ch);
+        for (let i = 0; i < data.length; i++) {
+            const abs = Math.abs(data[i]);
+            if (abs > maxSample) maxSample = abs;
+        }
+    }
+
+    // Avoid divide-by-zero
+    if (maxSample === 0) return audioBuffer;
+
+    const gain = 1 / maxSample;
+
+    // Apply gain to all channels
+    for (let ch = 0; ch < numberOfChannels; ch++) {
+        const data = audioBuffer.getChannelData(ch);
+        for (let i = 0; i < data.length; i++) {
+            data[i] *= gain;
+        }
+    }
+
+    return audioBuffer;
+}
+
 
 
 
