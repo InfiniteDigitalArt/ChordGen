@@ -527,20 +527,20 @@ const pianoSampler = new Tone.Sampler({
 // ----------------------
 const stringsSampler = new Tone.Sampler({
     urls: {
-        "C1": "S_000_036_c1.wav",
-        "F#1": "S_000_042_f#1.wav",
-        "C2": "S_000_048_c2.wav",
-        "F#2": "S_000_054_f#2.wav",
-        "C3": "S_000_060_c3.wav",
-        "F#3": "S_000_066_f#3.wav",
-        "C4": "S_000_072_c4.wav",
-        "F#4": "S_000_078_f#4.wav",
-        "C5": "S_000_084_c5.wav"
+        "C2":  "S_000_036_c1.wav",   // was C1
+        "F#2": "S_000_042_f#1.wav",  // was F#1
+        "C3":  "S_000_048_c2.wav",   // was C2
+        "F#3": "S_000_054_f#2.wav",  // was F#2
+        "C4":  "S_000_060_c3.wav",   // was C3
+        "F#4": "S_000_066_f#3.wav",  // was F#3
+        "C5":  "S_000_072_c4.wav",   // was C4
+        "F#5": "S_000_078_f#4.wav",  // was F#4
+        "C6":  "S_000_084_c5.wav"    // was C5
     },
     baseUrl: "Strings/",
-    release: 0.5,
-    transpose: -12
+    release: 0.4
 }).connect(reverb);
+
 
 // ----------------------
 // Instrument Registry
