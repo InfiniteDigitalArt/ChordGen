@@ -3,6 +3,8 @@
 // ----------------------
 let totalDuration = Tone.Time("4m").toSeconds(); // default 4 bars
 let lastProgressionSignature = "";
+let droppedAudioPlayer = null;
+
 
 
 
@@ -693,6 +695,10 @@ async function previewAudio() {
         Tone.Transport.loopEnd = totalDuration;
     }
     
+    if (droppedAudioPlayer) {
+    droppedAudioPlayer.start(0); // start at beginning
+}
+
     Tone.Transport.start("+0.05");
     requestAnimationFrame(animateCursor);
 
@@ -974,6 +980,10 @@ stopBtn.onclick = () => {
     Tone.Transport.cancel();
     Tone.Transport.position = 0;
     Tone.Transport.ticks = 0;
+    if (droppedAudioPlayer) {
+    droppedAudioPlayer.stop();
+}
+
 
     currentInstrument.releaseAll();
 
@@ -1038,6 +1048,40 @@ document.getElementById("instrumentSelector").addEventListener("change", e => {
     const choice = e.target.value;
     currentInstrument = instruments[choice];
 });
+
+const dropZone = document.getElementById("audioDropZone");
+
+dropZone.addEventListener("dragover", e => {
+    e.preventDefault();
+    dropZone.classList.add("dragover");
+});
+
+dropZone.addEventListener("dragleave", () => {
+    dropZone.classList.remove("dragover");
+});
+
+dropZone.addEventListener("drop", async e => {
+    e.preventDefault();
+    dropZone.classList.remove("dragover");
+
+    const file = e.dataTransfer.files[0];
+    if (!file) return;
+
+    const arrayBuffer = await file.arrayBuffer();
+
+    // Stop previous audio if any
+    if (droppedAudioPlayer) {
+        droppedAudioPlayer.stop();
+        droppedAudioPlayer.dispose();
+    }
+
+    // Create new Tone.Player
+    droppedAudioPlayer = new Tone.Player().toDestination();
+    await droppedAudioPlayer.load(arrayBuffer);
+
+    dropZone.textContent = `Loaded: ${file.name}`;
+});
+
 
 
 
