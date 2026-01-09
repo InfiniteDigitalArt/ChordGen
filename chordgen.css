@@ -45,7 +45,7 @@ body {
     font-size: 14px;
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 4px;
     transition: box-shadow 0.2s ease, transform 0.15s ease;
 }
 
@@ -206,7 +206,7 @@ input:checked + .slider:before {
 
     background: #0f172a;
     border: 1px solid #1f2937;
-    padding: 14px 20px;
+    padding: 10px 10px;
     border-radius: 12px;
     margin-bottom: 24px;
 
@@ -234,7 +234,7 @@ input:checked + .slider:before {
 
 #tempoValue {
     color: #00aaff;
-    font-weight: 700;
+    font-weight: 600;
 }
 
 /* --------------------------------------------------
@@ -294,12 +294,26 @@ input:checked + .slider:before {
    Status Text
 -------------------------------------------------- */
 
-.status {
-    margin-top: 16px;
+.status-row {
+    display: flex;
+    align-items: center;      /* vertical centering */
+    justify-content: center;  /* horizontal centering */
+    gap: 12px;
+    height: 24px;
+    margin-top: 10px;
+}
+
+
+.status,
+#progressionText {
+    margin: 0;            /* important */
     font-size: 16px;
     color: #9ca3af;
     text-align: center;
+    opacity: 0.9;
+    line-height: 1.2;     /* keeps vertical centering clean */
 }
+
 
 /* --------------------------------------------------
    Fonts
@@ -378,21 +392,13 @@ input:checked + .slider:before {
 
 
 .info-text {
-    margin-top: 8px;
+    margin-bottom: 10px;
     font-size: 15px;
     color: #6b7280; /* soft grey-blue */
     text-align: center;
     line-height: 1.4;
     opacity: 0.85;
     user-select: none;
-}
-
-#progressionText {
-    margin-top: 4px;
-    font-size: 14px;
-    color: #9ca3af;
-    text-align: center;
-    opacity: 0.9;
 }
 
 .rhythm-control {
@@ -481,6 +487,27 @@ input:checked + .slider:before {
 #audioDropZone .dropLabel {
     display: block;
     width: 100%;
+}
+
+.knob {
+    width: 30px;
+    height: 40px;
+    border-radius: 50%;
+    background: #222;
+    border: 2px solid #555;
+    position: relative;
+}
+
+.knob::after {
+    content: "";
+    position: absolute;
+    width: 4px;
+    height: 12px;
+    background: #00aaff;
+    top: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 2px;
 }
 
     

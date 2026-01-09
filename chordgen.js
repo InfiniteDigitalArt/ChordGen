@@ -5,6 +5,9 @@ let totalDuration = Tone.Time("4m").toSeconds(); // default 4 bars
 let lastProgressionSignature = "";
 let droppedAudioPlayer = null;
 let droppedAudioBuffer = null;
+let instrumentGain = new Tone.Gain(1).toDestination();
+let droppedAudioGain = new Tone.Gain(1).toDestination();
+
 
 
 
@@ -526,6 +529,8 @@ const pianoSampler = new Tone.Sampler({
     baseUrl: "DancePiano/",
     release: 0.3
 }).connect(reverb);
+reverb.connect(instrumentGain);
+
 
 // ----------------------
 // Strings Sampler
@@ -545,6 +550,7 @@ const stringsSampler = new Tone.Sampler({
     baseUrl: "Strings/",
     release: 0.4
 }).connect(reverb);
+reverb.connect(instrumentGain);
 
 
 // ----------------------
@@ -1098,7 +1104,7 @@ dropZone.addEventListener("drop", async e => {
         }
 
         // Create player using the normalized buffer directly
-        droppedAudioPlayer = new Tone.Player().toDestination();
+        droppedAudioPlayer = new Tone.Player().connect(droppedAudioGain);
         droppedAudioPlayer.buffer = audioBuffer;
         droppedAudioPlayer.autostart = false;
 
@@ -1178,6 +1184,13 @@ function normalizeAudioBuffer(audioBuffer) {
     return audioBuffer;
 }
 
+document.getElementById("instrumentVol").addEventListener("input", e => {
+    instrumentGain.gain.value = parseFloat(e.target.value);
+});
+
+document.getElementById("audioVol").addEventListener("input", e => {
+    droppedAudioGain.gain.value = parseFloat(e.target.value);
+});
 
 
 
