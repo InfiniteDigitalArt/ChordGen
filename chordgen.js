@@ -652,7 +652,8 @@ async function previewAudio() {
                     chordNotes.forEach(n => {
                         currentInstrument.triggerAttackRelease(n, dur, time);
                     });
-                }, transportTime + pianoDelay);
+                }, offsetSeconds + transportTime);
+
             }
 
             transportTime += durSeconds;
@@ -673,7 +674,8 @@ async function previewAudio() {
             if (step > 0) {
                 Tone.Transport.schedule(time => {
                     currentInstrument.triggerAttackRelease(root, dur, time);
-                }, bassTime + pianoDelay);
+                }, offsetSeconds + bassTime);
+
             }
 
             bassTime += durSeconds;
