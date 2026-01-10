@@ -729,6 +729,8 @@ async function previewAudio() {
 
     const ctx = Tone.getContext().rawContext;
     const startTime = ctx.currentTime + 0.2; // small delay so everything is ready
+    window._audioStartTime = startTime;
+
 
     // Vocal always starts immediately at playback start
     if (droppedAudioPlayer) {
@@ -737,6 +739,8 @@ async function previewAudio() {
 
     Tone.Transport.start(startTime);
     requestAnimationFrame(animateCursor);
+    requestAnimationFrame(drawWaveform);
+
 }
 
 
@@ -1011,6 +1015,8 @@ stopBtn.onclick = () => {
     isPlaying = false;
 
     Tone.Transport.stop();
+    window._audioStartTime = undefined;
+
     Tone.Transport.cancel();
     Tone.Transport.position = 0;
     Tone.Transport.ticks = 0;
@@ -1154,6 +1160,9 @@ dropZone.addEventListener("drop", async e => {
         // Hide placeholder
         document.querySelector(".waveform-placeholder").style.display = "none";
 
+        // ⭐ Switch border from dashed → solid 
+        document.querySelector(".waveform-wrapper").classList.add("has-file");
+
         if (droppedAudioPlayer) {
             droppedAudioPlayer.stop();
             droppedAudioPlayer.dispose();
@@ -1174,42 +1183,134 @@ dropZone.addEventListener("drop", async e => {
 
 
 
-function drawWaveform(audioBuffer) {
+function drawWaveform() {
     const canvas = document.getElementById("waveformCanvas");
+    if (!canvas) return;
+
     const ctx = canvas.getContext("2d");
 
-    // Resize canvas to match CSS size
-    const width = canvas.clientWidth;
+    // Hi‑DPI setup
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width  = canvas.clientWidth  * dpr;
+    canvas.height = canvas.clientHeight * dpr;
+
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.scale(dpr, dpr);
+
+    const width  = canvas.clientWidth;
     const height = canvas.clientHeight;
-    canvas.width = width;
-    canvas.height = height;
 
     ctx.clearRect(0, 0, width, height);
 
-    const data = audioBuffer.getChannelData(0); // mono preview
-    const step = Math.ceil(data.length / width);
-    const amp = height / 2;
+    // --- TIMING ---
+    const bpm = Tone.Transport.bpm.value;
+    const secondsPerBeat = 60 / bpm;
 
-    ctx.strokeStyle = "#00aaff";
+    const audioDurationSeconds = droppedAudioBuffer
+        ? droppedAudioBuffer.duration
+        : (totalDuration || 0);
+
+    const offsetBeats   = Number(document.getElementById("vocalOffsetBeats").value || 0);
+    const offsetSeconds = offsetBeats * secondsPerBeat;
+
+    // Timeline for drawing (grid ignores lead‑in)
+    const pxPerSecond = width / audioDurationSeconds;
+
+    // -----------------------------
+    // Draw beat + bar lines (AUDIO ONLY)
+    // -----------------------------
+    const totalBeatsAudio = audioDurationSeconds / secondsPerBeat;
+
+    for (let beat = 0; beat <= totalBeatsAudio; beat++) {
+        const t = beat * secondsPerBeat;   // NO LEAD‑IN SHIFT
+        const x = t * pxPerSecond;
+
+        const isBar = beat % 4 === 0;
+
+        ctx.strokeStyle = isBar ? "#ffffff22" : "#ffffff11";
+        ctx.lineWidth = isBar ? 2 : 1;
+
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+        ctx.stroke();
+    }
+
+    // -----------------------------
+    // Lead‑in block (visual only, drawn AFTER grid)
+    // -----------------------------
+    if (offsetSeconds > 0) {
+        const leadWidth = offsetSeconds * pxPerSecond;
+        ctx.fillStyle = "#00aaff22";
+        ctx.fillRect(0, 0, leadWidth, height);
+    }
+
+    // -----------------------------
+    // Waveform (aligned to audio)
+    // -----------------------------
+    if (droppedAudioBuffer) {
+        drawWaveformBuffer(ctx, droppedAudioBuffer, pxPerSecond, 0);
+    }
+
+    // -----------------------------
+    // Playhead (starts at waveform start)
+    // -----------------------------
+    if (window._audioStartTime !== undefined && Tone.Transport.state === "started") {
+        const elapsed = Tone.now() - window._audioStartTime;
+        const clamped = Math.max(0, Math.min(elapsed, audioDurationSeconds));
+
+        const playheadX = clamped * pxPerSecond;
+
+        ctx.strokeStyle = "#ff4444";
+        ctx.lineWidth = 2;
+
+        ctx.beginPath();
+        ctx.moveTo(playheadX, 0);
+        ctx.lineTo(playheadX, height);
+        ctx.stroke();
+    }
+
+    requestAnimationFrame(drawWaveform);
+}
+
+
+
+function drawWaveformBuffer(ctx, buffer, pxPerSecond, offsetSeconds) {
+    const width = ctx.canvas.width;
+    const height = ctx.canvas.height;
+
+    const data = buffer.getChannelData(0);
+    const samplesPerPixel = Math.floor(data.length / width);
+
+    ctx.strokeStyle = "#ffffffaa";
     ctx.lineWidth = 1;
+
     ctx.beginPath();
 
-    for (let i = 0; i < width; i++) {
-        let min = 1.0;
-        let max = -1.0;
+    for (let x = 0; x < width; x++) {
+        const start = x * samplesPerPixel;
+        const end = start + samplesPerPixel;
 
-        for (let j = 0; j < step; j++) {
-            const v = data[i * step + j];
+        let min = 1;
+        let max = -1;
+
+        for (let i = start; i < end; i++) {
+            const v = data[i];
             if (v < min) min = v;
             if (v > max) max = v;
         }
 
-        ctx.moveTo(i, (1 + min) * amp);
-        ctx.lineTo(i, (1 + max) * amp);
+        const y1 = (1 - max) * height * 0.5;
+        const y2 = (1 - min) * height * 0.5;
+
+        ctx.moveTo(x, y1);
+        ctx.lineTo(x, y2);
     }
 
     ctx.stroke();
 }
+
+
 
 function normalizeAudioBuffer(audioBuffer) {
     const numberOfChannels = audioBuffer.numberOfChannels;

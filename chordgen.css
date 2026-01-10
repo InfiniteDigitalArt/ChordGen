@@ -562,6 +562,12 @@ input:checked + .slider:before {
     user-select: none;
 }
 
+.waveform-wrapper.has-file {
+    border: 2px solid #1f2937;   /* solid instead of dashed */
+    background: #0a0f1a;         /* optional: remove dragover tint */
+}
+
+
 
 
 
