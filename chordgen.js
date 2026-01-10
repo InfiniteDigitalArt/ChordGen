@@ -507,7 +507,6 @@ const reverb = new Tone.Reverb({
     preDelay: 0.02
 }).connect(instrumentGain);
 
-
 // ----------------------
 // Piano Sampler
 // ----------------------
@@ -531,8 +530,7 @@ const pianoSampler = new Tone.Sampler({
     },
     baseUrl: "DancePiano/",
     release: 0.3
-}).connect(reverb);   // Sampler → Reverb → Gain → Destination
-
+}).connect(reverb);   // Sampler → Reverb → instrumentGain → Destination
 
 // ----------------------
 // Strings Sampler
@@ -551,8 +549,7 @@ const stringsSampler = new Tone.Sampler({
     },
     baseUrl: "Strings/",
     release: 0.4
-}).connect(reverb);   // Sampler → Reverb → Gain → Destination
-
+}).connect(reverb);   // Sampler → Reverb → instrumentGain → Destination
 
 // ----------------------
 // Instrument Registry
@@ -565,7 +562,6 @@ const instruments = {
 // Default instrument
 let currentInstrument = instruments.piano;
 
-
 // ----------------------
 // Instrument Selector
 // ----------------------
@@ -573,6 +569,15 @@ document.getElementById("instrumentSelector").addEventListener("change", e => {
     currentInstrument = instruments[e.target.value];
 });
 
+// ----------------------
+// Instrument Volume Slider
+// ----------------------
+const instrumentVolSlider = document.getElementById("instrumentVol");
+
+instrumentVolSlider.addEventListener("input", () => {
+    const v = Number(instrumentVolSlider.value);   // 0.0–1.0
+    instrumentGain.gain.value = v;
+});
 
 
 
@@ -580,6 +585,9 @@ document.getElementById("instrumentSelector").addEventListener("change", e => {
 // Preview Audio (FINAL)
 // ----------------------
 
+// ----------------------
+// Preview Audio (FINAL)
+// ----------------------
 async function previewAudio() {
     if (!currentProgression.length) return;
 
@@ -607,9 +615,9 @@ async function previewAudio() {
     const secondsPerBeat = 60 / Tone.Transport.bpm.value;
     const offsetSeconds = offsetBeats * secondsPerBeat;
 
+    // Piano always respects lead‑in on FIRST pass.
+    // Looping behavior will be handled by loopStart/loopEnd.
     const pianoDelay = offsetSeconds;
-
-
 
     // -----------------------------
     // UNIT → MUSICAL DURATION MAP
@@ -628,7 +636,7 @@ async function previewAudio() {
     // -----------------------------
     // AUDIO ENGINE (Transport time)
     // -----------------------------
-    let transportTime = 0; // in seconds, relative to Transport
+    let transportTime = 0; // seconds
 
     // CHORDS (upper notes)
     currentProgression.forEach(chord => {
@@ -643,9 +651,8 @@ async function previewAudio() {
                 Tone.Transport.schedule(time => {
                     chordNotes.forEach(n => {
                         currentInstrument.triggerAttackRelease(n, dur, time);
-                        
                     });
-                }, transportTime + offsetSeconds);
+                }, transportTime + pianoDelay);
             }
 
             transportTime += durSeconds;
@@ -666,70 +673,70 @@ async function previewAudio() {
             if (step > 0) {
                 Tone.Transport.schedule(time => {
                     currentInstrument.triggerAttackRelease(root, dur, time);
-                    
-                }, bassTime + offsetSeconds);
+                }, bassTime + pianoDelay);
             }
 
             bassTime += durSeconds;
         });
     });
 
-    // Total duration in seconds (use the longest of chords/bass)
-    totalDuration = Math.max(transportTime, bassTime);
+    // Actual progression length (no lead‑in)
+    const progressionDuration = Math.max(transportTime, bassTime);
 
-
-    
-
+    // Cursor should represent the progression only
+    totalDuration = progressionDuration;
 
     // -----------------------------
     // CURSOR + LOOP ENGINE
     // -----------------------------
-    // We'll use seconds, not ticks, for the cursor
     function animateCursor() {
         if (!isPlaying) return;
 
-        const elapsed = Tone.Transport.seconds - pianoDelay;
-        const safeElapsed = Math.max(0, elapsed);
+        // Time since the progression "musically" started
+        const raw = Tone.Transport.seconds - pianoDelay;
+        const safeElapsed = Math.max(0, raw);
 
-        cursorX = (safeElapsed / totalDuration) * canvas.width;
+        // On loops, wrap within the progression duration
+        const loopedElapsed = Tone.Transport.loop
+            ? safeElapsed % progressionDuration
+            : safeElapsed;
+
+        cursorX = (loopedElapsed / progressionDuration) * canvas.width;
         drawPianoRoll();
 
-        if (safeElapsed < totalDuration) {
-            requestAnimationFrame(animateCursor);
-        } else {
-            if (Tone.Transport.loop) {
-                requestAnimationFrame(animateCursor);
-            } else {
-                isPlaying = false;
-                drawPianoRoll();
-            }
+        if (!Tone.Transport.loop && safeElapsed >= progressionDuration) {
+            isPlaying = false;
+            drawPianoRoll();
+            return;
         }
+
+        requestAnimationFrame(animateCursor);
     }
 
+    // For the loop button: use progression length
+    totalTicks = Tone.Time(progressionDuration).toTicks();
 
-
-    // For the loop button: use seconds, converted to Time
-    totalTicks = Tone.Time(totalDuration).toTicks();
-
-    // Loop only the progression (skip the lead‑in)
-    const progressionDuration = Math.max(transportTime, bassTime);
-    Tone.Transport.loopEnd = progressionDuration;
-
-    // If loop is ON, enforce the same
-    if (Tone.Transport.loop) {
-        Tone.Transport.loopEnd = progressionDuration;
+    // Configure Transport looping:
+    // - If looping: first pass plays from 0 (includes lead‑in),
+    //   then loops only the musical section [offsetSeconds, offsetSeconds + progressionDuration]
+    if (isLooping) {
+        Tone.Transport.loop = true;
+        Tone.Transport.loopStart = offsetSeconds;
+        Tone.Transport.loopEnd = offsetSeconds + progressionDuration;
+    } else {
+        Tone.Transport.loop = false;
     }
 
-    
-const ctx = Tone.getContext().rawContext;
-const startTime = ctx.currentTime + 0.2; // small delay so everything is ready
+    const ctx = Tone.getContext().rawContext;
+    const startTime = ctx.currentTime + 0.2; // small delay so everything is ready
 
-if (droppedAudioPlayer) {
-    droppedAudioPlayer.start(startTime);
-}
+    // Vocal always starts immediately at playback start
+    if (droppedAudioPlayer) {
+        droppedAudioPlayer.start(startTime);
+    }
 
-Tone.Transport.start(startTime);
-requestAnimationFrame(animateCursor);
+    Tone.Transport.start(startTime);
+    requestAnimationFrame(animateCursor);
 }
 
 
@@ -1021,21 +1028,25 @@ stopBtn.onclick = () => {
 
 
 
+// ----------------------
+// Loop Button
+// ----------------------
 const loopBtn = document.getElementById("loopBtn");
 let isLooping = false;
 
 loopBtn.onclick = () => {
+    // Toggle internal loop state
     isLooping = !isLooping;
+
+    // Update button UI
     loopBtn.classList.toggle("active", isLooping);
 
-    if (isLooping) {
-        Tone.Transport.loop = true;
-        Tone.Transport.loopStart = 0;
-        Tone.Transport.loopEnd = totalDuration;
-    } else {
-        Tone.Transport.loop = false;
-    }
+    // IMPORTANT:
+    // Do NOT touch Tone.Transport.loop, loopStart, or loopEnd here.
+    // previewAudio() will configure the Transport correctly
+    // based on this isLooping flag.
 };
+
 
 
 
