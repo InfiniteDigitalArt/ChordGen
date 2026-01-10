@@ -196,22 +196,51 @@
         Generate and export chord progression MIDIs. Click a chord name to select a new one, drag to rearrange.
     </div>
 
-<div id="audioDropZone">
-    <label>Instrument Volume</label>
-    <input id="instrumentVol" type="range" min="0" max="1" step="0.01" value="0.5">
+<div id="audioSection">
 
-    <label>Audio Volume</label>
-    <input id="audioVol" type="range" min="0" max="1" step="0.01" value="0.5">
+    <div class="audio-controls">
 
-    <span class="dropLabel">
-        Drag & drop audio here (WAV / MP3)<br>
-        (For example a Vocal or Melody<br>
-        to test your progression with it)
-    </span>
+        <label>
+            Vocal Lead‑In (beats): 
+            <span id="leadInValue">4</span>
+        </label>
+        <input id="vocalOffsetBeats" type="range" min="0" max="16" step="1" value="4">
 
+        <label>
+            Instrument Volume: 
+            <span id="instrumentVolValue">0.50</span>
+        </label>
+        <input id="instrumentVol" type="range" min="0" max="1" step="0.01" value="0.5">
 
-    <canvas id="waveformCanvas"></canvas>
+        <label>
+            Audio Volume: 
+            <span id="audioVolValue">0.50</span>
+        </label>
+        <input id="audioVol" type="range" min="0" max="1" step="0.01" value="0.5">
+
+    </div>
+
+    <div class="waveform-area">
+        <div id="waveformDropZone" class="waveform-wrapper">
+            <canvas id="waveformCanvas"></canvas>
+
+            <div class="waveform-placeholder">
+                Drag & drop audio here (WAV / MP3)<br>
+                (For example a Vocal or Melody to test your progression with it)
+            </div>
+        </div>
+
+        <div class="waveform-filename" id="waveformFilename">
+            No file loaded
+        </div>
+    </div>
+
 </div>
+
+
+
+
+
 
 
     <!-- Load JS -->

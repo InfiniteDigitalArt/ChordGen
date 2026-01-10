@@ -599,6 +599,15 @@ async function previewAudio() {
     cursorX = 0;
     isPlaying = true;
 
+    // --- VOCAL LEAD‑IN OFFSET (beats → seconds) ---
+    const offsetBeats = Number(document.getElementById("vocalOffsetBeats").value || 0);
+    const secondsPerBeat = 60 / Tone.Transport.bpm.value;
+    const offsetSeconds = offsetBeats * secondsPerBeat;
+
+    const pianoDelay = offsetSeconds;
+
+
+
     // -----------------------------
     // UNIT → MUSICAL DURATION MAP
     // -----------------------------
@@ -633,7 +642,7 @@ async function previewAudio() {
                         currentInstrument.triggerAttackRelease(n, dur, time);
                         
                     });
-                }, transportTime);
+                }, transportTime + offsetSeconds);
             }
 
             transportTime += durSeconds;
@@ -655,7 +664,7 @@ async function previewAudio() {
                 Tone.Transport.schedule(time => {
                     currentInstrument.triggerAttackRelease(root, dur, time);
                     
-                }, bassTime);
+                }, bassTime + offsetSeconds);
             }
 
             bassTime += durSeconds;
@@ -663,7 +672,8 @@ async function previewAudio() {
     });
 
     // Total duration in seconds (use the longest of chords/bass)
-    totalDuration = Math.max(transportTime, bassTime);
+    totalDuration = Math.max(transportTime, bassTime) + offsetSeconds;
+
     
 
 
@@ -674,15 +684,15 @@ async function previewAudio() {
     function animateCursor() {
         if (!isPlaying) return;
 
-        const elapsed = Tone.Transport.seconds;
-        cursorX = (elapsed / totalDuration) * canvas.width;
+        const elapsed = Tone.Transport.seconds - pianoDelay;
+        const safeElapsed = Math.max(0, elapsed);
 
+        cursorX = (safeElapsed / totalDuration) * canvas.width;
         drawPianoRoll();
 
-        if (elapsed < totalDuration) {
+        if (safeElapsed < totalDuration) {
             requestAnimationFrame(animateCursor);
         } else {
-            // If looping, keep the cursor alive
             if (Tone.Transport.loop) {
                 requestAnimationFrame(animateCursor);
             } else {
@@ -691,6 +701,7 @@ async function previewAudio() {
             }
         }
     }
+
 
 
     // For the loop button: use seconds, converted to Time
@@ -1061,20 +1072,19 @@ document.getElementById("instrumentSelector").addEventListener("change", e => {
     currentInstrument = instruments[choice];
 });
 
-const dropZone = document.getElementById("audioDropZone");
+const dropZone = document.getElementById("waveformDropZone");
+
 
 // Highlight on dragover
 dropZone.addEventListener("dragover", e => {
     e.preventDefault();
-    e.stopPropagation();
     dropZone.classList.add("dragover");
 });
 
-// Remove highlight when leaving
 dropZone.addEventListener("dragleave", e => {
-    e.preventDefault();
     dropZone.classList.remove("dragover");
 });
+
 
 dropZone.addEventListener("drop", async e => {
     e.preventDefault();
@@ -1084,36 +1094,65 @@ dropZone.addEventListener("drop", async e => {
     const file = e.dataTransfer.files[0];
     if (!file) return;
 
-    document.querySelector("#audioDropZone .dropLabel").textContent = "Loading…";
+    const filename = file.name;
+
+    // Auto BPM
+    const bpm = extractBPM(filename);
+    if (bpm) {
+        Tone.Transport.bpm.value = bpm;
+        document.getElementById("tempoSlider").value = bpm;
+        document.getElementById("tempoValue").textContent = bpm + " BPM";
+    }
+
+    // Auto Key
+    const detectedKey = extractKey(filename);
+    if (detectedKey) {
+        document.getElementById("scaleSelector").value = detectedKey;
+
+        const [root, quality] = detectedKey.split(" ");
+        currentScale = buildScale(root, quality === "minor");
+        currentIsMinor = quality === "minor";
+
+        // ⭐ REGENERATE PROGRESSION HERE
+        generateProgression();
+        updateProgressionDisplay();
+    }
+
+
+    // Update placeholder
+    document.getElementById("waveformFilename").textContent = "Loading…";
 
     try {
         const arrayBuffer = await file.arrayBuffer();
         const audioBuffer = await Tone.getContext().rawContext.decodeAudioData(arrayBuffer);
 
-        // Normalize in place
         normalizeAudioBuffer(audioBuffer);
 
-        // Store and draw
         droppedAudioBuffer = audioBuffer;
         drawWaveform(audioBuffer);
 
-        // Remove old player
+        // ⭐ Update filename here
+        document.getElementById("waveformFilename").textContent = file.name;
+
+        // Hide placeholder
+        document.querySelector(".waveform-placeholder").style.display = "none";
+
         if (droppedAudioPlayer) {
             droppedAudioPlayer.stop();
             droppedAudioPlayer.dispose();
         }
 
-        // Create player using the normalized buffer directly
         droppedAudioPlayer = new Tone.Player().connect(droppedAudioGain);
         droppedAudioPlayer.buffer = audioBuffer;
         droppedAudioPlayer.autostart = false;
 
-        document.querySelector("#audioDropZone .dropLabel").textContent = `Loaded: ${file.name}`;
     } catch (err) {
         console.error(err);
-        document.querySelector("#audioDropZone .dropLabel").textContent = "Error loading file";
+        document.getElementById("waveformFilename").textContent = "Error loading file";
     }
+
 });
+
 
 
 
@@ -1192,6 +1231,45 @@ document.getElementById("audioVol").addEventListener("input", e => {
     droppedAudioGain.gain.value = parseFloat(e.target.value);
 });
 
+// Detect Tempo and Key
+function extractBPM(filename) {
+    const bpmMatch = filename.match(/(\d+)\s*bpm/i);
+    return bpmMatch ? parseInt(bpmMatch[1], 10) : null;
+}
+
+function extractKey(filename) {
+    const keyMatch = filename.match(/([A-G][#b]?)[_\-\s]?(major|minor|maj|min|m)/i);
+    if (!keyMatch) return null;
+
+    let root = keyMatch[1].toUpperCase();
+    let quality = keyMatch[2].toLowerCase();
+
+    if (quality === "maj") quality = "major";
+    if (quality === "min" || quality === "m") quality = "minor";
+
+    return `${root} ${quality}`;
+}
+
+function attachSliderReadout(sliderId, readoutId, formatter = v => v) {
+    const slider = document.getElementById(sliderId);
+    const readout = document.getElementById(readoutId);
+
+    const update = () => {
+        readout.textContent = formatter(slider.value);
+    };
+
+    slider.addEventListener("input", update);   // while dragging
+    slider.addEventListener("mousemove", update); // while hovering
+    slider.addEventListener("change", update);  // after release
+
+    update(); // initialize
+}
+
+attachSliderReadout("vocalOffsetBeats", "leadInValue");
+
+attachSliderReadout("instrumentVol", "instrumentVolValue", v => Number(v).toFixed(2));
+
+attachSliderReadout("audioVol", "audioVolValue", v => Number(v).toFixed(2));
 
 
 

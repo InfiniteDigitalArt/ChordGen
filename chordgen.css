@@ -186,13 +186,17 @@ input:checked + .slider:before {
     margin-top: 90px;
     width: 92vw;
     max-width: 1400px;
-    height: 92vh;
+    min-height: 90vh;
+    height: auto;
     background: #0a0f1c;
-    padding: 32px;
+    padding: 26px;
     border-radius: 20px;
     box-shadow: 0 0 40px rgba(0, 116, 201, 0.3);
     overflow: auto;
 }
+
+
+
 
 /* --------------------------------------------------
    Transport Bar
@@ -285,7 +289,7 @@ input:checked + .slider:before {
     border: 1px solid #1f2937;
     border-radius: 10px;
     width: 100%;
-    height: 400px;
+    height: 360px;
     display: block;
     box-shadow: inset 0 0 12px rgba(0, 116, 201, 0.2);
 }
@@ -392,7 +396,7 @@ input:checked + .slider:before {
 
 
 .info-text {
-    margin-bottom: 10px;
+    margin-bottom: 5px;
     font-size: 15px;
     color: #6b7280; /* soft grey-blue */
     text-align: center;
@@ -451,66 +455,112 @@ input:checked + .slider:before {
     scrollbar-color: #1e293b #0f172a;
 }
 
-#audioDropZone {
-    
-    width: 100%;
-    height: 90px;
-    border: 2px dashed #1f2937;
-    border-radius: 10px;
-    background: #0f172a;
-    color: #9ca3af;
+/* Main drop zone container */
+/* Entire bottom section layout */
+#audioSection {
     display: flex;
     align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    text-align: center;
-    transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
-    position: relative;
-    gap: 10px; /* increases spacing between label and waveform */ 
-    padding: 16px;
+    justify-content: space-between;
+    gap: 24px;
+    margin-top: 20px;
 }
 
-#audioDropZone.dragover {
-    border-color: #00aaff;
-    background: #0a1628;
-    color: #e5e7eb;
+/* Left column: sliders */
+.audio-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 0 0 200px;
 }
 
-#waveformCanvas {
+.audio-controls label {
+    font-size: 13px;
+    color: #9ca3af;
+}
+
+.audio-controls input[type="range"] {
     width: 100%;
-    height: 80px;
-    
-    background: #0a0f1a;
-    border-radius: 6px;
+    height: 4px;
+    background: #444;
+    border-radius: 2px;
+    appearance: none;
+    cursor: pointer;
 }
 
-#audioDropZone .dropLabel {
-    display: block;
-    width: 100%;
-}
-
-.knob {
-    width: 30px;
-    height: 40px;
-    border-radius: 50%;
-    background: #222;
-    border: 2px solid #555;
-    position: relative;
-}
-
-.knob::after {
-    content: "";
-    position: absolute;
-    width: 4px;
+.audio-controls input[type="range"]::-webkit-slider-thumb {
+    appearance: none;
+    width: 12px;
     height: 12px;
     background: #00aaff;
-    top: 4px;
-    left: 50%;
-    transform: translateX(-50%);
-    border-radius: 2px;
+    border-radius: 50%;
 }
 
-    
+.audio-controls input[type="range"]::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    background: #00aaff;
+    border-radius: 50%;
+}
+
+/* Waveform drop zone */
+.waveform-wrapper {
+    position: relative;
+    flex: 1;
+    height: 100px;
+    min-height: 100px;   /* ← prevents collapse */
+    flex-shrink: 0;      /* ← prevents flexbox from squeezing it */
+    background: #0a0f1a;
+    border: 2px dashed #1f2937;
+    border-radius: 10px;
+    transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+
+/* Highlight when dragging */
+.waveform-wrapper.dragover {
+    border-color: #00aaff;
+    background: #0a1628;
+}
+
+/* Canvas */
+#waveformCanvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+/* Placeholder text */
+.waveform-placeholder {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #9ca3af;
+    font-size: 14px;
+    text-align: center;
+    opacity: 0.8;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.waveform-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100px; /* ensures wrapper can't collapse */
+}
+
+
+.waveform-filename {
+    font-size: 13px;
+    color: #9ca3af;
+    opacity: 0.9;
+    text-align: center;     /* center the text */
+    margin-top: 8px;        /* gap between waveform and filename */
+    user-select: none;
+}
 
 
 
