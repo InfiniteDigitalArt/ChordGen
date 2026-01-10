@@ -5,7 +5,6 @@ let totalDuration = Tone.Time("4m").toSeconds(); // default 4 bars
 let lastProgressionSignature = "";
 let droppedAudioPlayer = null;
 let droppedAudioBuffer = null;
-let instrumentGain = new Tone.Gain(1).toDestination();
 let droppedAudioGain = new Tone.Gain(1).toDestination();
 
 
@@ -498,12 +497,16 @@ if (!root || typeof root !== "string" || !/\d$/.test(root)) {
 // Tone.js playback
 // ----------------------
 
-// Subtle reverb
+// Instrument gain (controlled by your slider)
+const instrumentGain = new Tone.Gain(0.5).toDestination();
+
+// Subtle reverb AFTER the gain
 const reverb = new Tone.Reverb({
     decay: 2.5,
     wet: 0.15,
     preDelay: 0.02
-}).toDestination();
+}).connect(instrumentGain);
+
 
 // ----------------------
 // Piano Sampler
@@ -528,8 +531,7 @@ const pianoSampler = new Tone.Sampler({
     },
     baseUrl: "DancePiano/",
     release: 0.3
-}).connect(reverb);
-reverb.connect(instrumentGain);
+}).connect(reverb);   // Sampler → Reverb → Gain → Destination
 
 
 // ----------------------
@@ -537,20 +539,19 @@ reverb.connect(instrumentGain);
 // ----------------------
 const stringsSampler = new Tone.Sampler({
     urls: {
-        "C2":  "S_000_036_c1.wav",   // was C1
-        "F#2": "S_000_042_f#1.wav",  // was F#1
-        "C3":  "S_000_048_c2.wav",   // was C2
-        "F#3": "S_000_054_f#2.wav",  // was F#2
-        "C4":  "S_000_060_c3.wav",   // was C3
-        "F#4": "S_000_066_f#3.wav",  // was F#3
-        "C5":  "S_000_072_c4.wav",   // was C4
-        "F#5": "S_000_078_f#4.wav",  // was F#4
-        "C6":  "S_000_084_c5.wav"    // was C5
+        "C2":  "S_000_036_c1.wav",
+        "F#2": "S_000_042_f#1.wav",
+        "C3":  "S_000_048_c2.wav",
+        "F#3": "S_000_054_f#2.wav",
+        "C4":  "S_000_060_c3.wav",
+        "F#4": "S_000_066_f#3.wav",
+        "C5":  "S_000_072_c4.wav",
+        "F#5": "S_000_078_f#4.wav",
+        "C6":  "S_000_084_c5.wav"
     },
     baseUrl: "Strings/",
     release: 0.4
-}).connect(reverb);
-reverb.connect(instrumentGain);
+}).connect(reverb);   // Sampler → Reverb → Gain → Destination
 
 
 // ----------------------
@@ -564,12 +565,14 @@ const instruments = {
 // Default instrument
 let currentInstrument = instruments.piano;
 
+
 // ----------------------
 // Instrument Selector
 // ----------------------
 document.getElementById("instrumentSelector").addEventListener("change", e => {
     currentInstrument = instruments[e.target.value];
 });
+
 
 
 
@@ -672,7 +675,8 @@ async function previewAudio() {
     });
 
     // Total duration in seconds (use the longest of chords/bass)
-    totalDuration = Math.max(transportTime, bassTime) + offsetSeconds;
+    totalDuration = Math.max(transportTime, bassTime);
+
 
     
 
@@ -706,14 +710,16 @@ async function previewAudio() {
 
     // For the loop button: use seconds, converted to Time
     totalTicks = Tone.Time(totalDuration).toTicks();
-    
-    // Update loop length so 8-chord mode works
-    Tone.Transport.loopEnd = totalDuration;
-    
-    // (Optional) If loop button is ON:
+
+    // Loop only the progression (skip the lead‑in)
+    const progressionDuration = Math.max(transportTime, bassTime);
+    Tone.Transport.loopEnd = progressionDuration;
+
+    // If loop is ON, enforce the same
     if (Tone.Transport.loop) {
-        Tone.Transport.loopEnd = totalDuration;
+        Tone.Transport.loopEnd = progressionDuration;
     }
+
     
 const ctx = Tone.getContext().rawContext;
 const startTime = ctx.currentTime + 0.2; // small delay so everything is ready
