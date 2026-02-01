@@ -871,7 +871,7 @@ function exportToMIDI() {
     const keyName = `${currentScale[0]} ${currentIsMinor ? "minor" : "major"}`;
     const fileName = `${keyName} - ${progressionSymbols}.mid`
         .replace(/\s+/g, "_")
-        .replace(/[^\w\-_.]/g, "");
+        .replace(/[^\w\-_.#]/g, "");
 
     const writer = new MidiWriter.Writer([chordTrack, bassTrack]);
 
